@@ -1,4 +1,5 @@
 import { useAcessibilidade, type TamanhoFonte } from '../contexto/Acessibilidade';
+import { IconeContraste } from './Icones';
 
 const OPCOES: { valor: TamanhoFonte; rotulo: string; nome: string }[] = [
   { valor: 'normal', rotulo: 'A', nome: 'Texto normal' },
@@ -32,8 +33,13 @@ export function BarraAcessibilidade() {
         type="button"
         aria-pressed={altoContraste}
         onClick={() => setAltoContraste(!altoContraste)}
+        className="botao-contraste"
+        title="Alto contraste"
       >
-        Alto contraste
+        <IconeContraste />
+        {/* No celular o texto some da tela (só o ícone), mas continua sendo o
+            nome do botão para leitores de tela e comandos de voz. */}
+        <span className="rotulo-contraste">Alto contraste</span>
       </button>
     </div>
   );

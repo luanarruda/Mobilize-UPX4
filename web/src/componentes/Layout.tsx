@@ -1,7 +1,17 @@
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useEffect, useRef } from 'react';
 import { BarraAcessibilidade } from './BarraAcessibilidade';
+import { IconeEstrela, IconeLinhas, IconeMapa, IconePessoa, IconeRota } from './Icones';
 import { useSessao } from '../contexto/Sessao';
+
+// No celular, só o rótulo curto aparece (o longo fica com display: none, então
+// o leitor de tela também lê o curto: o nome falado é o mesmo que se vê).
+const ITENS_MENU = [
+  { para: '/', longo: 'Mapa ao vivo', curto: 'Mapa', Icone: IconeMapa, fim: true },
+  { para: '/planejar', longo: 'Planejar trajeto', curto: 'Planejar', Icone: IconeRota, fim: false },
+  { para: '/linhas', longo: 'Linhas e horários', curto: 'Linhas', Icone: IconeLinhas, fim: false },
+  { para: '/favoritos', longo: 'Favoritos', curto: 'Favoritos', Icone: IconeEstrela, fim: false },
+];
 
 export function Layout() {
   // Ao trocar de página, leva o foco para o conteúdo: o leitor de tela
@@ -32,17 +42,31 @@ export function Layout() {
           <img src="/favicon.svg" alt="" width={36} height={36} />
           <span>RotaCerta</span>
         </Link>
-        <nav aria-label="Principal">
+        {/* Um único menu: no computador fica no cabeçalho, só com texto; no
+            celular vira uma barra fixa embaixo, com ícone e nome curto (CSS). */}
+        <nav aria-label="Principal" className="menu-principal">
           <ul>
-            <li><NavLink to="/" end>Mapa ao vivo</NavLink></li>
-            <li><NavLink to="/planejar">Planejar trajeto</NavLink></li>
-            <li><NavLink to="/linhas">Linhas e horários</NavLink></li>
-            <li><NavLink to="/favoritos">Favoritos</NavLink></li>
+            {ITENS_MENU.map(({ para, longo, curto, Icone, fim }) => (
+              <li key={para}>
+                <NavLink to={para} end={fim}>
+                  <Icone />
+                  <span className="rotulo-longo">{longo}</span>
+                  <span className="rotulo-curto">{curto}</span>
+                </NavLink>
+              </li>
+            ))}
             <li>
               {usuario ? (
-                <NavLink to="/conta" title={`Conectado como ${usuario.nome}`}>Minha conta</NavLink>
+                <NavLink to="/conta" title={`Conectado como ${usuario.nome}`}>
+                  <IconePessoa />
+                  <span className="rotulo-longo">Minha conta</span>
+                  <span className="rotulo-curto">Conta</span>
+                </NavLink>
               ) : (
-                <NavLink to="/entrar">Entrar</NavLink>
+                <NavLink to="/entrar">
+                  <IconePessoa />
+                  <span>Entrar</span>
+                </NavLink>
               )}
             </li>
           </ul>

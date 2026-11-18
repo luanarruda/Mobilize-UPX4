@@ -103,6 +103,9 @@ h2 { font-size: 1.15rem; }
   color: var(--texto); text-decoration: none; font-weight: 600;
 }
 .cabecalho nav a.active { background: var(--primaria); color: var(--primaria-texto); }
+.menu-principal .icone, .menu-principal .rotulo-curto { display: none; }
+.botao-contraste { display: inline-flex; align-items: center; gap: 0.4rem; }
+.botao-contraste .icone { width: 1.1em; height: 1.1em; }
 
 .barra-acessibilidade { margin-left: auto; display: flex; gap: 0.75rem; }
 .barra-acessibilidade button, .grupo-fonte button {
@@ -279,7 +282,8 @@ a { color: var(--primaria); }
   font-variant-numeric: tabular-nums;
 }
 .grade-horarios li { text-align: center; padding: 0.3rem; border: 1px solid var(--borda); border-radius: 6px; }
-.grade-horarios li.passou { color: var(--texto-suave); text-decoration: line-through; opacity: 0.6; }
+/* Já passou: riscado e em cinza, mas sem transparência, para manter o contraste mínimo de 4,5:1 (WCAG 1.4.3). */
+.grade-horarios li.passou { color: var(--texto-suave); text-decoration: line-through; background: var(--fundo); }
 
 /* Página do ponto */
 .atributos { list-style: none; padding: 0; margin: 0; display: flex; gap: 1.5rem; flex-wrap: wrap; font-weight: 600; }
@@ -489,13 +493,48 @@ a { color: var(--primaria); }
   #root, #root:has(.pagina-mapa, .pagina-linha) { height: auto; min-height: 100dvh; }
   #root > main, #root:has(.pagina-mapa, .pagina-linha) > main { overflow: visible; }
 
-  .cabecalho { flex-wrap: wrap; gap: 0.5rem 1rem; padding: 0.5rem 0.75rem; }
-  .barra-acessibilidade { gap: 0.4rem; }
-  /* Menu ocupa a linha de baixo inteira, com os três itens visíveis
-     (sem menu "hambúrguer", que esconde as opções de quem tem pouca prática). */
-  .cabecalho nav { order: 3; width: 100%; }
-  .cabecalho nav ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(6.2rem, 1fr)); gap: 0.25rem; }
-  .cabecalho nav a { text-align: center; white-space: normal; padding: 0.45rem 0.3rem; font-size: 0.9rem; min-height: 44px; display: grid; place-items: center; }
+  /* Cabeçalho numa linha só: marca à esquerda, acessibilidade à direita. */
+  .cabecalho { flex-wrap: nowrap; gap: 0.5rem; padding: 0.4rem 0.75rem; }
+  .barra-acessibilidade { gap: 0.35rem; }
+  .barra-acessibilidade button, .grupo-fonte button { padding: 0 0.6rem; }
+  .rotulo-contraste { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  /* Botões do cabeçalho com tamanho fixo no celular: com A+/A++ eles cresceriam
+     e empurrariam a página para o lado. O conteúdo continua ampliado. */
+  .barra-acessibilidade button, .grupo-fonte button { font-size: 15px; min-height: 44px; }
+  .marca { font-size: 18px; }
+  :root:not([data-fonte='normal']) .marca span { display: none; }
+
+  /* Menu = barra fixa embaixo, como nos apps de transporte: sempre ao alcance
+     do polegar, com as 5 opções visíveis (sem menu "hambúrguer", que esconde
+     as opções de quem tem pouca prática com tecnologia). */
+  .menu-principal {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 1100;
+    background: var(--superficie); border-top: 1px solid var(--borda);
+    box-shadow: 0 -2px 10px rgb(0 0 0 / 0.08);
+    /* Celulares sem botão físico: não fica embaixo da barra de gestos. */
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  /* .cabecalho na frente: precisa vencer a regra do desktop (.cabecalho nav ul). */
+  .cabecalho .menu-principal ul { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0; }
+  .cabecalho .menu-principal a {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.15rem;
+    min-height: 60px; padding: 0.35rem 0.1rem; border-radius: 0;
+    /* Tamanho fixo em px: com A++ os 5 nomes não caberiam lado a lado.
+       O zoom do navegador continua ampliando normalmente. */
+    font-size: 12.5px; font-weight: 600; line-height: 1.15; white-space: nowrap;
+    color: var(--texto-suave);
+  }
+  .menu-principal .icone { display: block; width: 24px; height: 24px; }
+  .menu-principal .rotulo-longo { display: none; }
+  .menu-principal .rotulo-curto { display: inline; }
+  /* Item ativo: cor + barra no topo + ícone preenchido de cor (não depende só da cor). */
+  .cabecalho .menu-principal a.active { background: none; color: var(--primaria); box-shadow: inset 0 3px 0 var(--primaria); }
+  :root[data-contraste='alto'] .cabecalho .menu-principal a.active { background: #000; }
+
+  /* Espaço para a barra não cobrir o fim da página, nem o elemento com foco
+     ao navegar por teclado (WCAG 2.4.11 — foco não encoberto). */
+  #root { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
+  html { scroll-padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
 
   .pagina-mapa, .pagina-linha { display: flex; flex-direction: column; height: auto; }
   /* No mapa ao vivo o mapa vem primeiro; nas outras telas, o texto vem primeiro. */
@@ -508,10 +547,12 @@ a { color: var(--primaria); }
   .previsao { gap: 0.6rem; }
 }
 
+@media (max-width: 22rem) {
+  .marca span { display: none; } /* telas muito estreitas: só o ícone da marca */
+}
 @media (max-width: 30rem) {
-  .cabecalho { gap: 0.5rem; }
-  .barra-acessibilidade { gap: 0.3rem; }
-  .marca span { display: none; } /* só o ícone, para caber a barra de acessibilidade */
-  .barra-acessibilidade button, .grupo-fonte button { padding: 0 0.55rem; font-size: 0.85rem; }
+  .marca { font-size: 1.05rem; gap: 0.35rem; }
+  .marca img { width: 30px; height: 30px; }
+  .barra-acessibilidade button, .grupo-fonte button { padding: 0 0.5rem; font-size: 0.85rem; min-width: 44px; }
   .detalhe-linha th, .detalhe-linha td { padding: 0.4rem 0.25rem; }
 }

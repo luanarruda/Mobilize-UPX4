@@ -306,7 +306,12 @@ A documentação define que **nesta fase não haverá versão para celular**, ou
 
 Como foi feito, tudo em `estilos.css`:
 - **Ponto de quebra em 56rem (896 px).** Abaixo disso, o mapa e o painel deixam de ficar lado a lado e passam a ficar um embaixo do outro. No "Mapa ao vivo" o mapa vem primeiro; nas outras telas, o texto vem primeiro e o mapa depois. Em media query, `rem` vale sempre 16 px (o padrão do navegador), sem depender dos botões A+/A++, mas o zoom do navegador ativa esse layout.
-- **Menu sempre visível.** Em tela estreita, os três itens ficam numa linha abaixo do logo. Evitamos o menu "hambúrguer" (☰), que esconde as opções e é pouco intuitivo para quem tem pouca prática com tecnologia.
+- **Menu como barra fixa embaixo, no celular.** No computador, o menu fica no cabeçalho, só com texto. No celular, o **mesmo** menu vira uma barra fixa na parte de baixo da tela, com ícone e nome curto em cada botão (Mapa, Planejar, Linhas, Favoritos, Entrar). É o padrão dos apps de transporte, porque fica ao alcance do polegar. Evitamos o menu "hambúrguer" (☰), que esconde as opções e é pouco intuitivo para quem tem pouca prática com tecnologia. Detalhes:
+    - o item da tela atual fica marcado com cor **e** com uma barra no topo, para não depender só da cor;
+    - o cabeçalho de cima cabe numa linha só: no celular, o botão de contraste mostra só o ícone ◐, mas "Alto contraste" continua sendo o nome dele para leitores de tela;
+    - os botões do menu e do cabeçalho têm tamanho fixo em px no celular: com A++ eles cresceriam e empurrariam a página para o lado (o conteúdo continua ampliado);
+    - `env(safe-area-inset-bottom)` evita que a barra fique embaixo da barra de gestos dos celulares sem botão físico;
+    - `scroll-padding-bottom` garante que um item focado pelo teclado nunca fique escondido atrás da barra (WCAG 2.4.11).
 - **Grades com `minmax(min(18rem, 100%), 1fr)`**: o cartão tem 18rem de largura ideal, mas nunca fica mais largo que a tela.
 - **Campos com `width: 100%; min-width: 0`.** Sem isso, um `<select>` fica da largura da opção mais comprida e vaza da tela.
 - **Altura com flexbox em vez de `calc(100vh - 66px)`.** A conta fixa quebrava quando o cabeçalho crescia com a fonte A++. Isso era um defeito também no desktop, e foi corrigido junto. Usamos `dvh`, a altura que de fato aparece no celular, descontando a barra de endereço do navegador.
