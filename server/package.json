@@ -3,17 +3,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js",
-    "db:setup": "tsx src/db/setup.ts",
+    "dev": "tsx watch --disable-warning=ExperimentalWarning src/index.ts",
+    "build": "tsc && node -e \"require('fs').copyFileSync('src/db/schema.sql','dist/db/schema.sql')\"",
+    "start": "node --disable-warning=ExperimentalWarning dist/index.js",
+    "db:reset": "node -e \"for (const f of ['','-wal','-shm']) require('fs').rmSync('dados/rotacerta.db'+f,{force:true})\" && echo Banco apagado. Ele sera recriado no proximo npm run dev.",
     "test": "vitest run"
   },
   "dependencies": {
     "cors": "^2.8.6",
     "dotenv": "^18.0.10",
     "express": "^5.3.0",
-    "pg": "^8.23.1",
     "ws": "^8.23.0",
     "zod": "^4.6.7"
   },
@@ -21,10 +20,12 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^26.6.6",
-    "@types/pg": "^8.23.1",
     "@types/ws": "^8.18.2",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vitest": "^5.1.0"
+  },
+  "engines": {
+    "node": ">=22.13"
   }
 }

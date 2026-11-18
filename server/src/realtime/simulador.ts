@@ -1,7 +1,7 @@
 // Simulador de frota: move os ônibus ao longo do trajeto de cada linha.
 // Substitui os GPS reais enquanto não temos acesso aos dados da operação
 // (risco previsto na seção 5 da documentação).
-import { pool } from '../db/pool.js';
+import { db } from '../db/conexao.js';
 import { distanciasAcumuladas, pontoNaDistancia, rumo, type Coord } from '../geo.js';
 import type { PosicaoVeiculo, ProvedorPosicoes } from './tipos.js';
 
@@ -37,7 +37,7 @@ export class Simulador implements ProvedorPosicoes {
   constructor(private fatorTempo = 1) {}
 
   async iniciar(aoAtualizar: (p: PosicaoVeiculo[]) => void) {
-    await this.carregar();
+    this.carregar();
     this.timer = setInterval(() => aoAtualizar(this.passo(INTERVALO_MS / 1000)), INTERVALO_MS);
     aoAtualizar(this.passo(0));
   }
@@ -46,21 +46,21 @@ export class Simulador implements ProvedorPosicoes {
     clearInterval(this.timer);
   }
 
-  private async carregar() {
-    const { rows: linhas } = await pool.query('SELECT id, trajeto FROM linhas');
-    const { rows: lp } = await pool.query(
-      'SELECT linha_id, distancia_m FROM linha_pontos ORDER BY linha_id, ordem',
-    );
+  private carregar() {
+    const linhas = db.prepare('SELECT id, trajeto FROM linhas').all() as { id: number; trajeto: string }[];
+    const lp = db
+      .prepare('SELECT linha_id, distancia_m FROM linha_pontos ORDER BY linha_id, ordem')
+      .all() as { linha_id: number; distancia_m: number }[];
     for (const l of linhas) {
-      const trajeto = l.trajeto as Coord[];
+      const trajeto = JSON.parse(l.trajeto) as Coord[];
       const acc = distanciasAcumuladas(trajeto);
       const paradas = lp.filter((r) => r.linha_id === l.id).map((r) => Number(r.distancia_m));
       this.linhas.set(l.id, { trajeto, acc, total: acc[acc.length - 1], paradas });
     }
 
-    const { rows: veiculos } = await pool.query(
-      'SELECT id, prefixo, linha_id, acessivel FROM veiculos WHERE linha_id IS NOT NULL ORDER BY id',
-    );
+    const veiculos = db
+      .prepare('SELECT id, prefixo, linha_id, acessivel FROM veiculos WHERE linha_id IS NOT NULL ORDER BY id')
+      .all() as { id: number; prefixo: string; linha_id: number; acessivel: number }[];
     // Espalha os ônibus de cada linha igualmente pelo trajeto, como numa operação real.
     const porLinha = new Map<number, typeof veiculos>();
     for (const v of veiculos) porLinha.set(v.linha_id, [...(porLinha.get(v.linha_id) ?? []), v]);
@@ -72,7 +72,7 @@ export class Simulador implements ProvedorPosicoes {
           id: v.id,
           prefixo: v.prefixo,
           linhaId,
-          acessivel: v.acessivel,
+          acessivel: Boolean(v.acessivel),
           distancia,
           velocidadeKmh: sortear(20, 35),
           paradoAte: 0,

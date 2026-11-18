@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api, type LinhaDetalhe, type Ponto, type PosicaoVeiculo } from '../api';
 import { usePosicoes } from '../hooks/usePosicoes';
 import { MapaFrota } from '../componentes/MapaFrota';
@@ -100,6 +101,7 @@ export function PaginaMapa() {
             <h2 id="titulo-detalhe">
               Linha {linhaSel.codigo} agora
             </h2>
+            <p><Link to={`/linhas/${linhaSel.id}`}>Ver itinerário e horários da linha {linhaSel.codigo}</Link></p>
             <table>
               <caption className="visualmente-oculto">
                 Ônibus da linha {linhaSel.codigo} em operação

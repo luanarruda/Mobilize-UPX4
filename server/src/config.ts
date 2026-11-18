@@ -1,11 +1,12 @@
 import 'dotenv/config';
 import { z } from 'zod';
 
-// Valida as variáveis de ambiente na inicialização: se faltar algo,
-// o servidor falha logo com uma mensagem clara, em vez de quebrar depois.
+// Valida as variáveis de ambiente na inicialização. Todas têm padrão,
+// então o projeto roda sem nenhum .env; ele só serve para mudar algo.
 const esquema = z.object({
-  DATABASE_URL: z.string().min(1),
   PORT: z.coerce.number().default(3333),
+  // Caminho do arquivo do banco SQLite (relativo à pasta server/).
+  DB_ARQUIVO: z.string().default('dados/rotacerta.db'),
   PROVEDOR: z.enum(['simulador', 'sptrans']).default('simulador'),
   SIMULADOR_VELOCIDADE: z.coerce.number().positive().default(1),
 });

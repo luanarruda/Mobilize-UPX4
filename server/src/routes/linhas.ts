@@ -1,37 +1,59 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { pool } from '../db/pool.js';
+import { db } from '../db/conexao.js';
+import { catalogo } from '../services/catalogo.js';
+import { agoraLocal } from '../services/tempo.js';
 import { estado } from '../realtime/estado.js';
 
 export const rotasLinhas = Router();
 
+const idValido = z.coerce.number().int().positive();
+
 // GET /api/linhas — lista resumida (sem o trajeto, que é pesado)
-rotasLinhas.get('/', async (_req, res) => {
-  const { rows } = await pool.query(
-    'SELECT id, codigo, nome, cor, empresa FROM linhas ORDER BY codigo',
+rotasLinhas.get('/', (_req, res) => {
+  res.json(
+    catalogo.linhas().map((l) => ({
+      id: l.id,
+      codigo: l.codigo,
+      nome: l.nome,
+      cor: l.cor,
+      empresa: l.empresa,
+      // nomes dos pontos, para a busca do front encontrar "Facens" na linha 201
+      pontos: [...new Set(l.paradas.map((p) => catalogo.ponto(p.pontoId)!.nome))],
+    })),
   );
-  res.json(rows);
 });
 
 // GET /api/linhas/:id — detalhes: trajeto e pontos em ordem
-rotasLinhas.get('/:id', async (req, res) => {
-  const id = z.coerce.number().int().positive().safeParse(req.params.id);
-  if (!id.success) return res.status(400).json({ erro: 'id inválido' });
+rotasLinhas.get('/:id', (req, res) => {
+  const id = idValido.safeParse(req.params.id);
+  const linha = id.success ? catalogo.linha(id.data) : undefined;
+  if (!linha) return res.status(404).json({ erro: 'Linha não encontrada' });
 
-  const { rows } = await pool.query(
-    'SELECT id, codigo, nome, cor, empresa, trajeto FROM linhas WHERE id = $1',
-    [id.data],
-  );
-  if (rows.length === 0) return res.status(404).json({ erro: 'Linha não encontrada' });
+  res.json({
+    id: linha.id,
+    codigo: linha.codigo,
+    nome: linha.nome,
+    cor: linha.cor,
+    empresa: linha.empresa,
+    trajeto: linha.trajeto,
+    destinos: { ida: catalogo.destino(linha, 'ida'), volta: catalogo.destino(linha, 'volta') },
+    pontos: linha.paradas.map((p) => ({ ...catalogo.ponto(p.pontoId)!, ...p, id: p.pontoId })),
+  });
+});
 
-  const { rows: pontos } = await pool.query(
-    `SELECT lp.ordem, lp.sentido, lp.distancia_m AS "distanciaM",
-            p.id, p.nome, p.lat, p.lng, p.acessivel, p.coberto
-       FROM linha_pontos lp JOIN pontos p ON p.id = lp.ponto_id
-      WHERE lp.linha_id = $1 ORDER BY lp.ordem`,
-    [id.data],
-  );
-  res.json({ ...rows[0], pontos });
+// GET /api/linhas/:id/horarios — horários programados dos três tipos de dia
+rotasLinhas.get('/:id/horarios', (req, res) => {
+  const id = idValido.safeParse(req.params.id);
+  if (!id.success || !catalogo.linha(id.data)) return res.status(404).json({ erro: 'Linha não encontrada' });
+
+  const linhas = db
+    .prepare('SELECT tipo_dia, saida FROM horarios WHERE linha_id = ? ORDER BY saida')
+    .all(id.data) as { tipo_dia: 'util' | 'sabado' | 'domingo'; saida: string }[];
+  const horarios = { util: [] as string[], sabado: [] as string[], domingo: [] as string[] };
+  for (const h of linhas) horarios[h.tipo_dia].push(h.saida);
+
+  res.json({ hoje: agoraLocal().tipoDia, horarios });
 });
 
 // GET /api/linhas/:id/veiculos — posições atuais só desta linha

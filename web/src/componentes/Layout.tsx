@@ -1,7 +1,21 @@
-import { NavLink, Outlet } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
 import { BarraAcessibilidade } from './BarraAcessibilidade';
 
 export function Layout() {
+  // Ao trocar de página, leva o foco para o conteúdo: o leitor de tela
+  // anuncia a nova página, como aconteceria num site tradicional.
+  const { pathname } = useLocation();
+  const principal = useRef<HTMLElement>(null);
+  const primeiraVez = useRef(true);
+  useEffect(() => {
+    if (primeiraVez.current) {
+      primeiraVez.current = false;
+      return;
+    }
+    principal.current?.focus();
+  }, [pathname]);
+
   return (
     <>
       {/* Link "pular para o conteúdo": quem navega por teclado ou leitor de tela
@@ -10,18 +24,19 @@ export function Layout() {
         Pular para o conteúdo
       </a>
       <header className="cabecalho">
-        <a href="/" className="marca" aria-label="RotaCerta, página inicial">
+        <Link to="/" className="marca" aria-label="RotaCerta, página inicial">
           <img src="/favicon.svg" alt="" width={36} height={36} />
           <span>RotaCerta</span>
-        </a>
+        </Link>
         <nav aria-label="Principal">
           <ul>
             <li><NavLink to="/" end>Mapa ao vivo</NavLink></li>
+            <li><NavLink to="/linhas">Linhas e horários</NavLink></li>
           </ul>
         </nav>
         <BarraAcessibilidade />
       </header>
-      <main id="conteudo" tabIndex={-1}>
+      <main id="conteudo" tabIndex={-1} ref={principal}>
         <Outlet />
       </main>
     </>

@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
-import { CircleMarker, MapContainer, Marker, Polyline, Popup, TileLayer, Tooltip } from 'react-leaflet';
+import { useEffect, useMemo } from 'react';
+import { Link } from 'react-router-dom';
+import { CircleMarker, MapContainer, Marker, Polyline, Popup, TileLayer, Tooltip, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { LinhaDetalhe, Ponto, PosicaoVeiculo } from '../api';
@@ -12,6 +13,17 @@ interface Props {
   veiculos: PosicaoVeiculo[];
   visiveis: Set<number>;
   selecionada: number | null;
+  /** Enquadra o mapa nas linhas visíveis (usado na página de uma linha). */
+  enquadrar?: boolean;
+  className?: string;
+}
+
+function Enquadrar({ coords }: { coords: [number, number][] }) {
+  const mapa = useMap();
+  useEffect(() => {
+    if (coords.length > 1) mapa.fitBounds(coords, { padding: [30, 30] });
+  }, [mapa, coords]);
+  return null;
 }
 
 // Cache de ícones: recriar o ícone a cada atualização (2 s) faria o marcador piscar.
@@ -33,14 +45,18 @@ function iconeOnibus(codigo: string, cor: string, acessivel: boolean) {
   return icone;
 }
 
-export function MapaFrota({ linhas, pontos, veiculos, visiveis, selecionada }: Props) {
+export function MapaFrota({ linhas, pontos, veiculos, visiveis, selecionada, enquadrar, className }: Props) {
   const porId = useMemo(() => new Map(linhas.map((l) => [l.id, l])), [linhas]);
+  const coordsVisiveis = useMemo(
+    () => linhas.filter((l) => visiveis.has(l.id)).flatMap((l) => l.trajeto),
+    [linhas, visiveis],
+  );
 
   return (
     <MapContainer
       center={CENTRO_SOROCABA}
       zoom={13}
-      className="mapa"
+      className={className ?? 'mapa'}
       // O mapa sozinho não é acessível a leitores de tela; a tabela ao lado
       // traz as mesmas informações em texto (ver PaginaMapa).
       aria-label="Mapa com a posição dos ônibus. As mesmas informações estão na lista ao lado."
@@ -49,6 +65,7 @@ export function MapaFrota({ linhas, pontos, veiculos, visiveis, selecionada }: P
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
+      {enquadrar && <Enquadrar coords={coordsVisiveis} />}
 
       {linhas.filter((l) => visiveis.has(l.id)).map((l) => {
         const destaque = selecionada === null || selecionada === l.id;
@@ -80,6 +97,8 @@ export function MapaFrota({ linhas, pontos, veiculos, visiveis, selecionada }: P
             <br />
             {p.acessivel ? '♿ Ponto acessível' : 'Ponto sem acessibilidade informada'}
             {p.coberto && <><br />Ponto coberto</>}
+            <br />
+            <Link to={`/pontos/${p.id}`}>Ver previsão de chegada</Link>
           </Popup>
         </CircleMarker>
       ))}
