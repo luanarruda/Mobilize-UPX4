@@ -51,6 +51,11 @@ export function PaginaPonto() {
         <li>{ponto.acessivel ? '♿ Ponto acessível' : 'Acessibilidade não informada'}</li>
         <li>{ponto.coberto ? 'Ponto coberto' : 'Ponto sem cobertura'}</li>
       </ul>
+      <p>
+        <Link to={`/planejar?origem=${ponto.id}`}>Planejar trajeto saindo daqui</Link>
+        {' · '}
+        <Link to={`/planejar?destino=${ponto.id}`}>Planejar trajeto até aqui</Link>
+      </p>
 
       <div className="cabecalho-previsoes">
         <h2>Próximos ônibus</h2>

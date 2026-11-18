@@ -7,6 +7,7 @@ import { PaginaMapa } from './paginas/PaginaMapa';
 import { PaginaLinhas } from './paginas/PaginaLinhas';
 import { PaginaLinha } from './paginas/PaginaLinha';
 import { PaginaPonto } from './paginas/PaginaPonto';
+import { PaginaPlanejar } from './paginas/PaginaPlanejar';
 import { Link } from 'react-router-dom';
 
 function NaoEncontrada() {
@@ -27,6 +28,7 @@ const roteador = createBrowserRouter([
       { path: '/linhas', element: <PaginaLinhas /> },
       { path: '/linhas/:id', element: <PaginaLinha /> },
       { path: '/pontos/:id', element: <PaginaPonto /> },
+      { path: '/planejar', element: <PaginaPlanejar /> },
       { path: '*', element: <NaoEncontrada /> },
     ],
   },

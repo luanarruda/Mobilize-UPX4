@@ -280,3 +280,50 @@ a { color: var(--primaria); }
 .detalhe-chegada { display: block; font-size: 0.85rem; color: var(--texto-suave); }
 .sem-onibus { margin: 0; color: var(--texto-suave); }
 .nota { font-size: 0.88rem; color: var(--texto-suave); max-width: 44rem; }
+
+/* ---------- Planejador ---------- */
+.form-plano { display: grid; gap: 0.9rem; max-width: 34rem; }
+.campo { display: grid; gap: 0.3rem; }
+.campo label { font-weight: 600; }
+.campo select {
+  font: inherit; min-height: 48px; padding: 0 0.6rem;
+  border: 2px solid var(--borda); border-radius: var(--raio);
+  background: var(--superficie); color: var(--texto);
+}
+.inverter { justify-self: start; }
+.botao-link {
+  justify-self: start; font: inherit; font-size: 0.9rem; font-weight: 600;
+  background: none; border: 0; padding: 0.2rem 0; color: var(--primaria);
+  text-decoration: underline; cursor: pointer;
+}
+.opcao { display: flex; gap: 0.6rem; align-items: flex-start; font-weight: 600; cursor: pointer; }
+.opcao input { width: 1.3rem; height: 1.3rem; margin-top: 0.15rem; flex-shrink: 0; }
+.botao-primario {
+  justify-self: start; font: inherit; font-weight: 700; min-height: 48px; padding: 0 1.4rem;
+  background: var(--primaria); color: var(--primaria-texto);
+  border: 2px solid var(--primaria); border-radius: var(--raio); cursor: pointer;
+}
+.botao-primario:disabled { opacity: 0.6; cursor: wait; }
+.passo-sub { display: block; font-size: 0.88rem; font-weight: 400; color: var(--texto-suave); margin: 0; }
+
+.opcoes-plano { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.5rem; }
+.opcoes-plano button {
+  width: 100%; display: grid; grid-template-columns: auto 1fr; gap: 0.1rem 1rem; align-items: center;
+  text-align: left; font: inherit; color: var(--texto); cursor: pointer;
+  padding: 0.7rem 1rem; background: var(--superficie);
+  border: 2px solid var(--borda); border-radius: var(--raio);
+}
+.opcoes-plano button[aria-pressed='true'] { border-color: var(--primaria); box-shadow: inset 4px 0 0 var(--primaria); }
+.resumo-tempo { grid-row: span 2; font-size: 1.4rem; font-weight: 700; }
+.resumo-sub { font-size: 0.9rem; color: var(--texto-suave); }
+.codigo-linha.mini { min-width: 2.6rem; font-size: 0.8rem; padding: 0.1rem 0.35rem; }
+
+.passos { list-style: none; padding: 0; margin: 0.5rem 0; }
+.passo {
+  display: flex; gap: 0.8rem; align-items: flex-start;
+  padding: 0.6rem 0 0.9rem 0.9rem; border-left: 5px solid var(--cor, var(--borda));
+  margin-left: 0.5rem;
+}
+.passo p { margin: 0 0 0.3rem; }
+.passo-caminhada { border-left-style: dashed; border-left-color: var(--texto-suave); display: block; }
+.passo-fim { border-left-color: transparent; display: block; }

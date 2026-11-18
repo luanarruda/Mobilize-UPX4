@@ -58,3 +58,24 @@ export function rumo(a: Coord, b: Coord): number {
     Math.sin(rad(a[0])) * Math.cos(rad(b[0])) * Math.cos(rad(b[1] - a[1]));
   return ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360;
 }
+
+/**
+ * Pedaço do trajeto que começa a `inicio` metros e segue por `comprimento`
+ * metros (dando a volta no circuito se precisar). Usado para desenhar no
+ * mapa só a parte da linha que a pessoa vai percorrer.
+ */
+export function trechoDoTrajeto(trajeto: Coord[], acc: number[], inicio: number, comprimento: number): Coord[] {
+  const total = acc[acc.length - 1];
+  const aFrente = (d: number) => (((d - inicio) % total) + total) % total;
+  const meio = acc
+    .slice(0, -1) // o último vértice repete o primeiro (circuito fechado)
+    .map((d, i) => ({ i, off: aFrente(d) }))
+    .filter((v) => v.off > 0 && v.off < comprimento)
+    .sort((a, b) => a.off - b.off)
+    .map((v) => trajeto[v.i]);
+  return [
+    pontoNaDistancia(trajeto, acc, inicio),
+    ...meio,
+    pontoNaDistancia(trajeto, acc, inicio + comprimento),
+  ];
+}

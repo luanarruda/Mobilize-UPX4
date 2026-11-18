@@ -31,6 +31,7 @@ export function Layout() {
         <nav aria-label="Principal">
           <ul>
             <li><NavLink to="/" end>Mapa ao vivo</NavLink></li>
+            <li><NavLink to="/planejar">Planejar trajeto</NavLink></li>
             <li><NavLink to="/linhas">Linhas e horários</NavLink></li>
           </ul>
         </nav>

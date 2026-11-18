@@ -81,6 +81,52 @@ export interface PosicaoVeiculo {
   atualizadoEm: string;
 }
 
+interface TrechoBase {
+  partidaS: number;
+  chegadaS: number;
+  caminho: Coord[];
+}
+
+export interface TrechoOnibus extends TrechoBase {
+  tipo: 'onibus';
+  linhaId: number;
+  codigo: string;
+  cor: string;
+  nomeLinha: string;
+  sentido: 'ida' | 'volta';
+  destino: string;
+  embarqueId: number;
+  embarque: string;
+  desembarqueId: number;
+  desembarque: string;
+  prefixo: string;
+  acessivel: boolean;
+  esperaS: number;
+  paradas: number;
+}
+
+export interface TrechoCaminhada extends TrechoBase {
+  tipo: 'caminhada';
+  deId: number;
+  de: string;
+  paraId: number;
+  para: string;
+  distanciaM: number;
+}
+
+export type Trecho = TrechoOnibus | TrechoCaminhada;
+
+export interface Itinerario {
+  chegadaS: number;
+  baldeacoes: number;
+  trechos: Trecho[];
+}
+
+export interface ResultadoPlano {
+  calculadoEm: string;
+  itinerarios: Itinerario[];
+}
+
 async function get<T>(caminho: string): Promise<T> {
   const resp = await fetch(`/api${caminho}`);
   if (!resp.ok) throw new Error(`Falha ao carregar ${caminho} (${resp.status})`);
@@ -94,4 +140,6 @@ export const api = {
   pontos: () => get<Ponto[]>('/pontos'),
   ponto: (id: number) => get<PontoDetalhe>(`/pontos/${id}`),
   previsoes: (id: number) => get<Previsoes>(`/pontos/${id}/previsoes`),
+  planejar: (origem: number, destino: number, acessivel: boolean) =>
+    get<ResultadoPlano>(`/planejar?origem=${origem}&destino=${destino}&acessivel=${acessivel ? 1 : 0}`),
 };

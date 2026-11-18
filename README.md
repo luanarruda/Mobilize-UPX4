@@ -33,7 +33,7 @@ rotacerta/
 │       ├── db/             schema.sql, dados de demonstração, conexão
 │       ├── realtime/       simulador, estado da frota, WebSocket
 │       ├── routes/         rotas REST (/api/linhas, /api/pontos…)
-│       ├── services/       catálogo da rede, previsão de chegada, fuso horário
+│       ├── services/       catálogo da rede, previsão de chegada, planejador, fuso horário
 │       ├── geo.ts          cálculos geográficos (Haversine, interpolação)
 │       └── index.ts        ponto de entrada
 └── web/                    Site React + TypeScript (Vite)
@@ -41,7 +41,7 @@ rotacerta/
         ├── componentes/    Layout, mapa, barra de acessibilidade
         ├── contexto/       preferências de acessibilidade
         ├── hooks/          usePosicoes (WebSocket)
-        └── paginas/        Mapa, Linhas, Linha, Ponto
+        └── paginas/        Mapa, Planejar, Linhas, Linha, Ponto
 ```
 
 ## Telas
@@ -52,6 +52,7 @@ rotacerta/
 | `/linhas` | Busca de linhas e pontos por número, nome ou bairro (RF03) |
 | `/linhas/:id` | Itinerário nos dois sentidos, próximas saídas, quadro de horários e mapa da linha (RF03) |
 | `/pontos/:id` | Previsão de chegada de todas as linhas que passam no ponto (RF02) |
+| `/planejar` | Planejador de trajetos com baldeação e opção acessível (RF04) |
 
 ## API
 
@@ -65,6 +66,7 @@ rotacerta/
 | GET | `/api/pontos` | Pontos de parada e linhas que passam em cada um |
 | GET | `/api/pontos/:id` | Um ponto e as linhas que o atendem |
 | GET | `/api/pontos/:id/previsoes` | Próximas chegadas por linha e sentido |
+| GET | `/api/planejar?origem=&destino=&acessivel=` | Até 3 opções de trajeto, com cada trecho detalhado |
 | GET | `/api/veiculos` | Posições atuais de todos os ônibus |
 | WS | `/ws` | Mensagens `{ tipo: "posicoes", dados: [...] }` a cada 2 s |
 
@@ -127,6 +129,28 @@ Os parâmetros ficam juntos em `services/previsao.ts` (`PARAMETROS`), para o gru
 
 **Acessibilidade nas novas telas.** O número de resultados da busca é anunciado ao leitor de tela enquanto se digita (`role="status"`). Ao trocar de página, o foco vai para o conteúdo principal, para o leitor de tela anunciar a nova página. Os horários que já passaram ficam riscados, mas continuam legíveis. Na página do ponto, a previsão se atualiza sozinha a cada 15 s e tem um botão "Atualizar" para quem quiser forçar.
 
+### Planejador de trajetos (Etapa 3)
+
+**A rede vira um grafo (Estrutura de Dados).** Os **vértices** são os pontos de parada. As **arestas** são de dois tipos:
+- **ônibus:** "pegar a linha X no ponto A e descer no ponto B", uma aresta para cada ponto à frente no itinerário;
+- **caminhada:** "andar de A até um ponto a até 500 m", para casos em que a baldeação exige atravessar a rua ou ir ao ponto vizinho. A distância em linha reta é multiplicada por 1,3, porque as ruas não são retas, e a velocidade considerada é de 4,3 km/h.
+
+**Algoritmo de Dijkstra.** Ele explora sempre o estado de menor custo ainda não visitado, e por isso a primeira vez que chega ao destino é pelo caminho mais barato. Para escolher o próximo estado rapidamente, usamos uma **fila de prioridade** implementada como **heap binário** (`FilaPrioridade` em `services/planejador.ts`): inserir e retirar custam O(log n), contra O(n) de procurar o menor numa lista comum.
+
+**O custo depende da hora (grafo dependente do tempo).** O tempo de uma aresta de ônibus não é fixo: é **a espera até o próximo ônibus passar** mais a viagem. A espera vem das posições em tempo real, com o mesmo cálculo da previsão de chegada. Se o ônibus mais próximo passa antes de a pessoa chegar ao ponto, consideramos a volta seguinte dele no circuito. Na baldeação há uma margem de 1 minuto entre descer de um ônibus e pegar o próximo.
+
+**Penalidade de baldeação.** Cada troca de ônibus soma 3 minutos ao custo, mas não ao horário de chegada mostrado. Sem isso, o algoritmo trocaria de ônibus várias vezes para ganhar segundos. É uma decisão de experiência do usuário: a persona Helena prefere esperar mais a fazer baldeação.
+
+**Várias opções.** O estado da busca é (ponto, quantos ônibus já usou, se chegou caminhando), e guardamos o melhor resultado com 1, 2 e 3 ônibus. Uma opção com mais baldeações só aparece se chegar **pelo menos 5 minutos antes** das opções mais simples; caso contrário, é descartada como "dominada".
+
+**Modo acessível (RF04 + RF07).** Com "Preciso de acessibilidade" marcado, o planejador só usa ônibus com elevador, só faz baldeação em pontos acessíveis e não sugere trechos a pé.
+
+**O trajeto na URL.** Origem, destino e opção acessível ficam no endereço (`/planejar?origem=15&destino=8`). Dá para mandar o link para alguém, salvar nos favoritos do navegador e usar o botão "voltar". A página do ponto usa isso nos links "Planejar trajeto saindo daqui" e "até aqui".
+
+**"Usar o ponto mais próximo de mim".** Usa a localização do navegador, que só funciona com a permissão da pessoa, e procura o ponto mais perto com a fórmula de Haversine. A localização **não é enviada ao servidor**: o cálculo é feito no próprio navegador, o que atende à coleta mínima de dados da LGPD (seção 8 da documentação).
+
+**Limitações conhecidas.** O planejamento parte de pontos de parada, e não de endereços: para buscar por endereço seria preciso um serviço de geocodificação. Linhas sem ônibus em operação no momento não entram no cálculo.
+
 ## Dados de demonstração
 
 As linhas `100`, `201`, `302`, `405`, `510` e `BRT1` são **fictícias**, montadas sobre locais reais de Sorocaba com coordenadas aproximadas e trajetos em linha reta. Elas não correspondem às linhas oficiais da Urbes. Os ônibus circulam o dia todo, mesmo fora do horário da tabela.
@@ -135,7 +159,7 @@ As linhas `100`, `201`, `302`, `405`, `510` e `BRT1` são **fictícias**, montad
 
 - [x] **Etapa 1:** fundação, mapa em tempo real (RF01), base de acessibilidade (RF07)
 - [x] **Etapa 2:** previsão de chegada (RF02), consulta de linhas e horários (RF03)
-- [ ] Etapa 3: planejador de trajetos com baldeação (RF04)
+- [x] **Etapa 3:** planejador de trajetos com baldeação (RF04)
 - [ ] Etapa 4: notificações (RF05), favoritos (RF06), cadastro e login (RF08)
 - [ ] Etapa 5: lotação colaborativa (RF09), feedback (RF10), impressão de horários (RF11)
 - [ ] Etapa 6: dados reais (SPTrans Olho Vivo), testes e documentação final
