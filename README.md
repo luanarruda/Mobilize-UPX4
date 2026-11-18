@@ -306,7 +306,13 @@ A documentação define que **nesta fase não haverá versão para celular**, ou
 
 Como foi feito, tudo em `estilos.css`:
 - **Ponto de quebra em 56rem (896 px).** Abaixo disso, o mapa e o painel deixam de ficar lado a lado e passam a ficar um embaixo do outro. No "Mapa ao vivo" o mapa vem primeiro; nas outras telas, o texto vem primeiro e o mapa depois. Em media query, `rem` vale sempre 16 px (o padrão do navegador), sem depender dos botões A+/A++, mas o zoom do navegador ativa esse layout.
-- **Menu como barra fixa embaixo, no celular.** No computador, o menu fica no cabeçalho, só com texto. No celular, o **mesmo** menu vira uma barra fixa na parte de baixo da tela, com ícone e nome curto em cada botão (Mapa, Planejar, Linhas, Favoritos, Entrar). É o padrão dos apps de transporte, porque fica ao alcance do polegar. Evitamos o menu "hambúrguer" (☰), que esconde as opções e é pouco intuitivo para quem tem pouca prática com tecnologia. Detalhes:
+- **Menu com ícones em três tamanhos.** O cabeçalho completo precisa de cerca de 1.250 px, então ele se adapta:
+    - **acima de 1280 px:** ícone + nome completo ("Planejar trajeto"); a tela atual fica em azul com um traço embaixo;
+    - **de 896 a 1280 px** (notebooks pequenos ou zoom do navegador): ícone + nome curto ("Planejar"), e o botão de contraste só com o ícone; até 1024 px a marca mostra só o ícone do ônibus;
+    - **abaixo de 896 px:** barra fixa embaixo (abaixo).
+
+  Fontes e espaços do cabeçalho são fixos em px: os botões A+/A++ ampliam o **conteúdo**, e o menu não estoura a tela. O zoom do navegador (Ctrl +) continua ampliando tudo. No alto contraste, só a tela atual fica amarela.
+- **Menu como barra fixa embaixo, no celular.** No celular, o **mesmo** menu vira uma barra fixa na parte de baixo da tela, com ícone e nome curto em cada botão (Mapa, Planejar, Linhas, Favoritos, Entrar). É o padrão dos apps de transporte, porque fica ao alcance do polegar. Evitamos o menu "hambúrguer" (☰), que esconde as opções e é pouco intuitivo para quem tem pouca prática com tecnologia. Detalhes:
     - o item da tela atual fica marcado com cor **e** com uma barra no topo, para não depender só da cor;
     - o cabeçalho de cima cabe numa linha só: no celular, o botão de contraste mostra só o ícone ◐, mas "Alto contraste" continua sendo o nome dele para leitores de tela;
     - os botões do menu e do cabeçalho têm tamanho fixo em px no celular: com A++ eles cresceriam e empurrariam a página para o lado (o conteúdo continua ampliado);

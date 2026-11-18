@@ -86,9 +86,9 @@ h2 { font-size: 1.15rem; }
 /* ---------- Cabeçalho ---------- */
 .cabecalho {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 2rem;
-  padding: 0.6rem 1.25rem;
+  padding: 0 1.25rem;
   background: var(--superficie);
   border-bottom: 1px solid var(--borda);
 }
@@ -98,16 +98,37 @@ h2 { font-size: 1.15rem; }
   color: var(--texto); text-decoration: none;
 }
 .cabecalho nav ul { display: flex; gap: 0.25rem; list-style: none; margin: 0; padding: 0; }
-.cabecalho nav a {
-  display: block; white-space: nowrap; padding: 0.4rem 0.8rem; border-radius: var(--raio);
-  color: var(--texto); text-decoration: none; font-weight: 600;
+/* Menu no computador: ícone + nome, ocupando a altura do cabeçalho. A tela
+   atual fica em azul com um traço embaixo — a mesma linguagem da barra do
+   celular (lá o traço fica em cima, colado na tela). */
+.cabecalho > .marca, .cabecalho > .barra-acessibilidade { align-self: center; }
+.cabecalho .menu-principal, .cabecalho .menu-principal ul, .cabecalho .menu-principal li { display: flex; align-items: stretch; }
+.cabecalho .menu-principal a {
+  display: flex; align-items: center; gap: 0.45rem; white-space: nowrap;
+  padding: 0 0.75rem; min-height: 60px;
+  /* Tamanho fixo em px no cabeçalho: os botões A+/A++ ampliam o CONTEÚDO; se
+     ampliassem também o menu, ele não caberia na tela. O zoom do navegador
+     (Ctrl +) continua ampliando tudo, inclusive o menu. */
+  font-size: 16px;
+  color: var(--texto-suave); text-decoration: none; font-weight: 600;
 }
-.cabecalho nav a.active { background: var(--primaria); color: var(--primaria-texto); }
-.menu-principal .icone, .menu-principal .rotulo-curto { display: none; }
-.botao-contraste { display: inline-flex; align-items: center; gap: 0.4rem; }
+.cabecalho .menu-principal a:hover { color: var(--texto); background: var(--fundo); }
+.cabecalho .menu-principal a.active { color: var(--primaria); box-shadow: inset 0 -3px 0 var(--primaria); }
+/* Alto contraste: os links do site ficam amarelos; no menu, só a tela atual. */
+:root[data-contraste='alto'] .cabecalho .menu-principal a,
+:root[data-contraste='alto'] .cabecalho .marca { color: #fff; }
+:root[data-contraste='alto'] .cabecalho .menu-principal a.active { color: #ffff00; }
+.menu-principal .icone { width: 20px; height: 20px; flex-shrink: 0; }
+.menu-principal .rotulo-curto { display: none; }
+.botao-contraste { display: inline-flex; align-items: center; gap: 0.4rem; white-space: nowrap; }
 .botao-contraste .icone { width: 1.1em; height: 1.1em; }
 
 .barra-acessibilidade { margin-left: auto; display: flex; gap: 0.75rem; }
+/* Cabeçalho todo em px (fonte E espaços), pelo mesmo motivo do menu. */
+.cabecalho { gap: 24px; padding-left: 20px; padding-right: 20px; }
+.cabecalho .marca { font-size: 21px; gap: 8px; }
+.cabecalho .barra-acessibilidade { gap: 12px; }
+.cabecalho .barra-acessibilidade button, .cabecalho .grupo-fonte button { font-size: 15px; padding: 0 12px; }
 .barra-acessibilidade button, .grupo-fonte button {
   font: inherit; font-size: 0.9rem; font-weight: 600;
   min-height: 44px; /* área de toque/clique confortável */
@@ -482,6 +503,19 @@ a { color: var(--primaria); }
   .codigo-linha { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
 
+/* ---------- Telas médias (notebook pequeno ou zoom do navegador) ----------
+   O cabeçalho completo precisa de ~1250 px. Abaixo disso: nomes curtos no
+   menu e o botão de contraste só com o ícone (o nome continua para leitores). */
+@media (max-width: 80rem) {
+  .menu-principal .rotulo-longo { display: none; }
+  .menu-principal .rotulo-curto { display: inline; }
+  .cabecalho .menu-principal a { padding: 0 10px; }
+  .rotulo-contraste { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}
+@media (max-width: 64rem) and (min-width: 56.01rem) {
+  .cabecalho .marca span { display: none; } /* só o ícone; o link continua "RotaCerta, página inicial" */
+}
+
 /* ---------- Telas estreitas: celular, tablet ou desktop com zoom alto ----------
    Quem aumenta o zoom do navegador (Ctrl +) também cai aqui, porque o zoom
    reduz a largura útil da tela. Isso atende ao critério "Reflow" da WCAG 2.1
@@ -494,7 +528,7 @@ a { color: var(--primaria); }
   #root > main, #root:has(.pagina-mapa, .pagina-linha) > main { overflow: visible; }
 
   /* Cabeçalho numa linha só: marca à esquerda, acessibilidade à direita. */
-  .cabecalho { flex-wrap: nowrap; gap: 0.5rem; padding: 0.4rem 0.75rem; }
+  .cabecalho { flex-wrap: nowrap; align-items: center; gap: 0.5rem; padding: 0.4rem 0.75rem; }
   .barra-acessibilidade { gap: 0.35rem; }
   .barra-acessibilidade button, .grupo-fonte button { padding: 0 0.6rem; }
   .rotulo-contraste { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
@@ -516,6 +550,9 @@ a { color: var(--primaria); }
   }
   /* .cabecalho na frente: precisa vencer a regra do desktop (.cabecalho nav ul). */
   .cabecalho .menu-principal ul { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0; }
+  .cabecalho .menu-principal { display: block; }
+  .cabecalho .menu-principal li { display: block; }
+  .cabecalho .menu-principal a:hover { background: none; }
   .cabecalho .menu-principal a {
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.15rem;
     min-height: 60px; padding: 0.35rem 0.1rem; border-radius: 0;
@@ -525,6 +562,7 @@ a { color: var(--primaria); }
     color: var(--texto-suave);
   }
   .menu-principal .icone { display: block; width: 24px; height: 24px; }
+  .cabecalho .menu-principal a.active { box-shadow: inset 0 3px 0 var(--primaria); }
   .menu-principal .rotulo-longo { display: none; }
   .menu-principal .rotulo-curto { display: inline; }
   /* Item ativo: cor + barra no topo + ícone preenchido de cor (não depende só da cor). */
