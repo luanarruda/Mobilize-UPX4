@@ -42,8 +42,13 @@ body { margin: 0; }
    sobra. Antes usávamos calc(100vh - 66px), que quebrava quando o cabeçalho
    crescia (fonte A++ ou tela estreita). Com flexbox, a altura se ajusta sozinha.
    dvh = altura visível de verdade no celular (descontando a barra do navegador). */
-#root { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
-#root > main { flex: 1; min-height: 0; overflow-y: auto; }
+#root { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; }
+#root > main { flex: 1; }
+/* Telas com mapa ocupam exatamente a altura da janela, e os painéis rolam por
+   dentro. Nas demais, quem rola é a própria página — assim a rolagem pelo
+   teclado (setas, Page Down, espaço) funciona sem nada especial (WCAG 2.1.1). */
+#root:has(.pagina-mapa, .pagina-linha) { height: 100vh; height: 100dvh; }
+#root:has(.pagina-mapa, .pagina-linha) > main { min-height: 0; overflow: hidden; }
 /* Áreas que rolam por dentro precisam de position: relative; senão os textos
    escondidos para leitor de tela (.visualmente-oculto, que usa position:
    absolute) "escapam" delas e esticam a página inteira. */
@@ -392,6 +397,87 @@ a { color: var(--primaria); }
 .resumo-previsoes li { display: flex; align-items: center; gap: 0.5rem; }
 .resumo-destino { flex: 1; font-size: 0.9rem; color: var(--texto-suave); }
 
+/* ---------- Etapa 5: lotação, feedback, impressão ---------- */
+.rodape {
+  display: flex; flex-wrap: wrap; gap: 0.4rem 1.5rem; align-items: center; justify-content: space-between;
+  padding: 0.5rem 1.25rem; font-size: 0.82rem; color: var(--texto-suave);
+  background: var(--superficie); border-top: 1px solid var(--borda);
+}
+.rodape nav { display: flex; gap: 1.25rem; }
+
+.selo-lotacao { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.88rem; font-weight: 600; }
+.selo-lotacao.sem-info { font-weight: 400; color: var(--texto-suave); }
+.selo-fonte { font-weight: 400; color: var(--texto-suave); }
+.barras { display: inline-flex; align-items: flex-end; gap: 2px; height: 1em; }
+.barras > span { width: 4px; background: var(--borda); border-radius: 1px; }
+.barras > span:nth-child(1) { height: 40%; } .barras > span:nth-child(2) { height: 60%; }
+.barras > span:nth-child(3) { height: 80%; } .barras > span:nth-child(4) { height: 100%; }
+.nivel-0 .barras .cheia, .nivel-1 .barras .cheia { background: #15803d; }
+.nivel-2 .barras .cheia { background: #b45309; }
+.nivel-3 .barras .cheia { background: #b91c1c; }
+:root[data-contraste='alto'] .barras .cheia { background: #ffff00 !important; }
+.informar-lotacao p { margin: 0.2rem 0 0; min-height: 0; }
+.opcoes-lotacao { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; margin-top: 0.3rem; }
+.opcoes-lotacao > p { flex-basis: 100%; }
+.botao-lotacao {
+  display: inline-flex; align-items: center; gap: 0.35rem; font: inherit; font-size: 0.85rem; font-weight: 600;
+  min-height: 44px; padding: 0 0.6rem; cursor: pointer;
+  background: var(--superficie); color: var(--texto); border: 2px solid var(--borda); border-radius: var(--raio);
+}
+.chegadas > li { padding-bottom: 0.4rem; border-bottom: 1px solid var(--borda); }
+.chegadas > li:last-child { border-bottom: 0; }
+
+.grupo-radio { border: 0; padding: 0; margin: 0; display: grid; gap: 0.4rem; }
+.grupo-radio legend { font-weight: 600; margin-bottom: 0.4rem; padding: 0; }
+.opcao-radio {
+  display: flex; gap: 0.6rem; align-items: flex-start; cursor: pointer; font-weight: 600;
+  padding: 0.6rem 0.75rem; border: 2px solid var(--borda); border-radius: var(--raio); background: var(--superficie);
+}
+.opcao-radio.marcada { border-color: var(--primaria); }
+.opcao-radio input { width: 1.2rem; height: 1.2rem; margin-top: 0.15rem; flex-shrink: 0; }
+.area-texto { min-height: 8rem; padding: 0.6rem 0.8rem; resize: vertical; line-height: 1.5; }
+/* Honeypot: fora da tela (e não display:none, que alguns robôs detectam). */
+.pote-de-mel { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+
+.lista-feedback { list-style: none; padding: 0; margin: 1rem 0; display: grid; gap: 0.75rem; }
+.feedback { padding: 0.8rem 1rem; border: 2px solid var(--borda); border-left-width: 6px; border-radius: var(--raio); background: var(--superficie); }
+.feedback-problema { border-left-color: #b91c1c; } .feedback-sugestao { border-left-color: #1d4ed8; } .feedback-elogio { border-left-color: #15803d; }
+.feedback-topo { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; margin: 0; font-size: 0.88rem; color: var(--texto-suave); }
+.feedback-tipo { font-weight: 700; color: var(--texto); }
+.feedback-texto { white-space: pre-wrap; margin: 0.4rem 0; }
+.botao-primario.como-botao { text-decoration: none; }
+
+/* Página de impressão (RF11) — na tela, uma "folha" centralizada. */
+.impressao { max-width: 52rem; margin: 0 auto; padding: 1.5rem; background: var(--superficie); color: var(--texto); }
+.barra-impressao { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--borda); }
+.barra-impressao p { flex-basis: 100%; }
+.impressao-marca { font-weight: 700; color: var(--primaria); margin: 0; }
+.impressao-topo h1 { display: flex; align-items: center; gap: 0.6rem; font-size: 1.5rem; margin: 0.3rem 0; }
+.impressao-bloco { margin-top: 1.25rem; }
+.impressao-bloco h2 { font-size: 1.1rem; border-bottom: 2px solid currentColor; padding-bottom: 0.2rem; margin-bottom: 0.5rem; }
+.impressao-qtd { font-weight: 400; font-size: 0.9rem; }
+.impressao-colunas { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr)); gap: 1rem; }
+.impressao-colunas h3 { font-size: 0.95rem; margin: 0 0 0.3rem; }
+.impressao-colunas ol { margin: 0; padding-left: 1.4rem; }
+.quadro-horas { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+.quadro-horas th, .quadro-horas td { border: 1px solid var(--borda); padding: 0.2rem 0.5rem; text-align: left; }
+.quadro-horas tbody th { width: 4rem; }
+.quadro-horas td { white-space: pre; letter-spacing: 0.02em; }
+.impressao-rodape { margin-top: 1.5rem; font-size: 0.82rem; color: var(--texto-suave); }
+
+@media print {
+  @page { margin: 12mm; }
+  /* No papel: preto no branco, sem barra de ações, sem fundo colorido. */
+  :root, :root[data-contraste='alto'] { --texto: #000; --texto-suave: #333; --borda: #999; --superficie: #fff; --fundo: #fff; --primaria: #000; font-size: 11pt; }
+  .nao-imprimir { display: none !important; }
+  /* Sem isto, a área com rolagem interna seria cortada e só a 1ª página sairia. */
+  #root { display: block; height: auto; }
+  #root > main { overflow: visible; }
+  .impressao { max-width: none; padding: 0; }
+  .impressao-bloco { break-inside: avoid; }
+  .codigo-linha { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
 /* ---------- Telas estreitas: celular, tablet ou desktop com zoom alto ----------
    Quem aumenta o zoom do navegador (Ctrl +) também cai aqui, porque o zoom
    reduz a largura útil da tela. Isso atende ao critério "Reflow" da WCAG 2.1
@@ -400,8 +486,8 @@ a { color: var(--primaria); }
    e não muda com os botões A+/A++. Então 56rem = 896px. */
 @media (max-width: 56rem) {
   /* A página inteira rola normalmente, em vez de cada painel rolar por dentro. */
-  #root { height: auto; min-height: 100dvh; }
-  #root > main { overflow: visible; }
+  #root, #root:has(.pagina-mapa, .pagina-linha) { height: auto; min-height: 100dvh; }
+  #root > main, #root:has(.pagina-mapa, .pagina-linha) > main { overflow: visible; }
 
   .cabecalho { flex-wrap: wrap; gap: 0.5rem 1rem; padding: 0.5rem 0.75rem; }
   .barra-acessibilidade { gap: 0.4rem; }

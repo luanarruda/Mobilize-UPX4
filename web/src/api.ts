@@ -41,6 +41,12 @@ export interface PontoDetalhe extends Omit<Ponto, 'linhas'> {
   linhas: Pick<LinhaResumo, 'id' | 'codigo' | 'nome' | 'cor'>[];
 }
 
+export interface Lotacao {
+  nivel: number; // 0 vazio · 1 sentados · 2 em pé · 3 lotado
+  relatos: number;
+  atualizadoEm: string;
+}
+
 export interface GrupoPrevisao {
   linhaId: number;
   codigo: string;
@@ -48,7 +54,14 @@ export interface GrupoPrevisao {
   cor: string;
   sentido: 'ida' | 'volta';
   destino: string;
-  chegadas: { prefixo: string; acessivel: boolean; distanciaM: number; minutos: number }[];
+  chegadas: {
+    veiculoId: number;
+    prefixo: string;
+    acessivel: boolean;
+    distanciaM: number;
+    minutos: number;
+    lotacao: Lotacao | null;
+  }[];
   /** Quando não há ônibus em operação: horário previsto pela tabela ("HH:MM"). */
   proximaPelaTabela: string | null;
 }
@@ -136,8 +149,22 @@ export interface Usuario {
   id: number;
   nome: string;
   email: string;
+  papel: 'passageiro' | 'equipe';
   preferencias: Preferencias;
   criadoEm: string;
+}
+
+export type TipoFeedback = 'sugestao' | 'elogio' | 'problema';
+export type StatusFeedback = 'novo' | 'lido' | 'resolvido';
+
+export interface FeedbackRecebido {
+  id: number;
+  tipo: TipoFeedback;
+  mensagem: string;
+  email: string | null;
+  status: StatusFeedback;
+  criadoEm: string;
+  linha: string | null;
 }
 
 export type TipoFavorito = 'linha' | 'ponto';
@@ -188,6 +215,18 @@ export const api = {
   favoritar: (f: Favorito) => requisitar<Favorito[]>('PUT', `/favoritos/${f.tipo}/${f.id}`),
   desfavoritar: (f: Favorito) => requisitar<Favorito[]>('DELETE', `/favoritos/${f.tipo}/${f.id}`),
   importarFavoritos: (itens: Favorito[]) => requisitar<Favorito[]>('POST', '/favoritos/importar', { itens }),
+
+  lotacao: () => get<Record<string, Lotacao>>('/lotacao'),
+  informarLotacao: (veiculoId: number, nivel: number, autor: string) =>
+    requisitar<{ veiculoId: number; lotacao: Lotacao | null }>('POST', '/lotacao', { veiculoId, nivel, autor }),
+
+  enviarFeedback: (dados: { tipo: TipoFeedback; mensagem: string; linhaId: number | null; email: string; site: string }) =>
+    requisitar<{ protocolo: number }>('POST', '/feedback', dados),
+  feedbacks: (status?: StatusFeedback) =>
+    get<{ feedbacks: FeedbackRecebido[]; contagem: Partial<Record<StatusFeedback, number>> }>(
+      `/feedback${status ? `?status=${status}` : ''}`,
+    ),
+  mudarStatusFeedback: (id: number, status: StatusFeedback) => requisitar<null>('PATCH', `/feedback/${id}`, { status }),
 
   planejar: (origem: number, destino: number, acessivel: boolean) =>
     get<ResultadoPlano>(`/planejar?origem=${origem}&destino=${destino}&acessivel=${acessivel ? 1 : 0}`),

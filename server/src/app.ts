@@ -5,6 +5,8 @@ import { rotasPontos } from './routes/pontos.js';
 import { rotasPlanejar } from './routes/planejar.js';
 import { rotasAuth } from './routes/auth.js';
 import { rotasFavoritos } from './routes/favoritos.js';
+import { rotasLotacao } from './routes/lotacao.js';
+import { rotasFeedback } from './routes/feedback.js';
 import { estado } from './realtime/estado.js';
 
 export function criarApp() {
@@ -20,6 +22,8 @@ export function criarApp() {
   app.use('/api/planejar', rotasPlanejar);
   app.use('/api/auth', rotasAuth);
   app.use('/api/favoritos', rotasFavoritos);
+  app.use('/api/lotacao', rotasLotacao);
+  app.use('/api/feedback', rotasFeedback);
   app.get('/api/veiculos', (_req, res) => res.json(estado.todas()));
 
   // Tratador de erros central: nenhum erro de banco vaza detalhes internos ao usuário.

@@ -15,6 +15,9 @@ import { PaginaFavoritos } from './paginas/PaginaFavoritos';
 import { PaginaEntrar } from './paginas/PaginaEntrar';
 import { PaginaConta } from './paginas/PaginaConta';
 import { PaginaPrivacidade } from './paginas/PaginaPrivacidade';
+import { PaginaFeedback } from './paginas/PaginaFeedback';
+import { PaginaEquipe } from './paginas/PaginaEquipe';
+import { PaginaImprimir } from './paginas/PaginaImprimir';
 import { Link } from 'react-router-dom';
 
 function NaoEncontrada() {
@@ -41,9 +44,13 @@ const roteador = createBrowserRouter([
       { path: '/cadastro', element: <PaginaEntrar modo="cadastro" /> },
       { path: '/conta', element: <PaginaConta /> },
       { path: '/privacidade', element: <PaginaPrivacidade /> },
+      { path: '/feedback', element: <PaginaFeedback /> },
+      { path: '/equipe', element: <PaginaEquipe /> },
       { path: '*', element: <NaoEncontrada /> },
     ],
   },
+  // Fora do Layout: a página de impressão não leva cabeçalho nem menu.
+  { path: '/linhas/:id/imprimir', element: <PaginaImprimir /> },
 ]);
 
 createRoot(document.getElementById('root')!).render(

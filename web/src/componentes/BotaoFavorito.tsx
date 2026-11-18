@@ -20,7 +20,9 @@ export function BotaoFavorito({ tipo, id, nome, compacto }: Props) {
       type="button"
       className={`botao-favorito${marcado ? ' marcado' : ''}${compacto ? ' compacto' : ''}`}
       aria-pressed={marcado}
-      aria-label={rotulo}
+      // Só o botão compacto (só a estrela) precisa de aria-label. No normal, o
+      // nome é o texto visível + complemento escondido (WCAG 2.5.3).
+      aria-label={compacto ? rotulo : undefined}
       title={rotulo}
       onClick={(e) => {
         e.preventDefault(); // quando está dentro de um link/cartão, não navega
@@ -29,7 +31,12 @@ export function BotaoFavorito({ tipo, id, nome, compacto }: Props) {
       }}
     >
       <span aria-hidden="true">{marcado ? '★' : '☆'}</span>
-      {!compacto && <span aria-hidden="true">{marcado ? ' Favorito' : ' Favoritar'}</span>}
+      {!compacto && (
+        <>
+          {marcado ? ' Favorito' : ' Favoritar'}
+          <span className="visualmente-oculto"> {nome}</span>
+        </>
+      )}
     </button>
   );
 }

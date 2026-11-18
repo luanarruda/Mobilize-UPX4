@@ -1,20 +1,13 @@
 // RF06 — Favoritos de quem tem conta. Sem conta, os favoritos ficam só no
 // navegador (localStorage); ao entrar, o front envia os locais para /importar.
-import { Router, type NextFunction, type Request, type Response } from 'express';
+import { Router } from 'express';
 import { z } from 'zod';
 import { db } from '../db/conexao.js';
 import { catalogo } from '../services/catalogo.js';
-import { usuarioDaRequisicao, type Usuario } from '../services/auth.js';
+import { exigirLogin, type Usuario } from '../services/auth.js';
 
 export const rotasFavoritos = Router();
 
-// Middleware: só segue se houver alguém logado; guarda o usuário em res.locals.
-function exigirLogin(req: Request, res: Response, next: NextFunction) {
-  const usuario = usuarioDaRequisicao(req);
-  if (!usuario) return res.status(401).json({ erro: 'Entre na sua conta.' });
-  res.locals.usuario = usuario;
-  next();
-}
 rotasFavoritos.use(exigirLogin);
 
 const item = z.object({ tipo: z.enum(['linha', 'ponto']), id: z.coerce.number().int().positive() });

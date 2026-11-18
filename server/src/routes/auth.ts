@@ -126,12 +126,18 @@ rotasAuth.get('/meus-dados', (req, res) => {
   const favoritos = db
     .prepare('SELECT tipo, ref_id AS id, criado_em AS criadoEm FROM favoritos WHERE usuario_id = ?')
     .all(usuario.id);
+  const feedbacks = db
+    .prepare('SELECT tipo, mensagem, status, criado_em AS criadoEm FROM feedbacks WHERE usuario_id = ?')
+    .all(usuario.id);
+  const relatosLotacao = (db.prepare('SELECT COUNT(*) AS n FROM lotacao_relatos WHERE usuario_id = ?').get(usuario.id) as { n: number }).n;
   res.setHeader('Content-Disposition', 'attachment; filename="meus-dados-rotacerta.json"');
   res.json({
     geradoEm: new Date().toISOString(),
     conta: { nome: usuario.nome, email: usuario.email, criadaEm: usuario.criadoEm, consentimentoEm: consentimento.consentimento_em },
     preferencias: usuario.preferencias,
     favoritos,
+    feedbacks,
+    relatosDeLotacao: relatosLotacao,
   });
 });
 
@@ -140,7 +146,12 @@ rotasAuth.get('/meus-dados', (req, res) => {
 rotasAuth.delete('/conta', (req, res) => {
   const usuario = usuarioDaRequisicao(req);
   if (!usuario) return res.status(401).json({ erro: 'Entre na sua conta.' });
+  // As mensagens de feedback continuam (anônimas) para a equipe, mas o e-mail
+  // de contato é apagado — senão sobraria um dado pessoal da conta excluída.
+  db.exec('BEGIN');
+  db.prepare('UPDATE feedbacks SET contato_email = NULL WHERE usuario_id = ?').run(usuario.id);
   db.prepare('DELETE FROM usuarios WHERE id = ?').run(usuario.id);
+  db.exec('COMMIT');
   res.clearCookie(COOKIE_SESSAO, { path: '/' });
   res.status(204).end();
 });

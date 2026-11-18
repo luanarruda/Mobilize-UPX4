@@ -4,7 +4,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { AddressInfo } from 'node:net';
 import type { Server } from 'node:http';
 import { criarApp } from './app.js';
-import { CONTA_DEMO } from './db/migracoes.js';
+import { CONTA_DEMO, CONTA_EQUIPE } from './db/migracoes.js';
+import { consolidarLotacao } from './services/lotacao.js';
 
 let servidor: Server;
 let base: string;
@@ -97,5 +98,71 @@ describe('favoritos (RF06)', () => {
     const imp = await api('POST', '/favoritos/importar', { itens: [{ tipo: 'linha', id: 2 }, { tipo: 'ponto', id: 8 }, { tipo: 'linha', id: 999 }] });
     expect(imp.corpo).toHaveLength(2); // repetido e inexistente ficam de fora
     expect((await api('DELETE', '/favoritos/ponto/8')).corpo).toEqual([{ tipo: 'linha', id: 2 }]);
+  });
+});
+
+describe('lotação colaborativa (RF09)', () => {
+  const agora = Date.parse('2026-11-18T12:00:00Z');
+  const ha = (min: number) => new Date(agora - min * 60_000).toISOString();
+
+  it('sem relatos válidos, não informa nada (em vez de inventar)', () => {
+    expect(consolidarLotacao([], agora)).toBeNull();
+    expect(consolidarLotacao([{ autor: 'a', nivel: 3, criadoEm: ha(25) }], agora)).toBeNull(); // vencido
+  });
+
+  it('conta só o último relato de cada pessoa', () => {
+    const r = consolidarLotacao([
+      { autor: 'a', nivel: 3, criadoEm: ha(10) },
+      { autor: 'a', nivel: 0, criadoEm: ha(1) },
+    ], agora);
+    expect(r).toMatchObject({ nivel: 0, relatos: 1 });
+  });
+
+  it('relatos recentes pesam mais que os antigos', () => {
+    const r = consolidarLotacao([
+      { autor: 'a', nivel: 3, criadoEm: ha(0) },
+      { autor: 'b', nivel: 0, criadoEm: ha(19) },
+    ], agora);
+    expect(r?.nivel).toBe(3);
+    expect(r?.relatos).toBe(2);
+  });
+
+  it('recebe relato sem conta e devolve a lotação na previsão do ponto', async () => {
+    const api = cliente();
+    const r = await api('POST', '/lotacao', { veiculoId: 4, nivel: 2, autor: 'navegador-teste-1' });
+    expect(r.status).toBe(201);
+    expect(r.corpo.lotacao).toMatchObject({ nivel: 2, relatos: 1 });
+    expect((await api('POST', '/lotacao', { veiculoId: 4, nivel: 9, autor: 'navegador-teste-1' })).status).toBe(400);
+    expect((await api('GET', '/lotacao')).corpo['4'].nivel).toBe(2);
+  });
+});
+
+describe('canal de feedback (RF10)', () => {
+  it('recebe mensagem sem conta e valida o tamanho', async () => {
+    const api = cliente();
+    expect((await api('POST', '/feedback', { tipo: 'sugestao', mensagem: 'curta' })).status).toBe(400);
+    const r = await api('POST', '/feedback', { tipo: 'problema', mensagem: 'O ponto da Facens está sem cobertura.', linhaId: 2 });
+    expect(r.status).toBe(201);
+    expect(r.corpo.protocolo).toBeGreaterThan(0);
+  });
+
+  it('descarta robôs que preenchem o campo escondido (honeypot)', async () => {
+    const r = await cliente()('POST', '/feedback', { tipo: 'elogio', mensagem: 'mensagem de robô de spam', site: 'http://spam' });
+    expect(r.corpo.protocolo).toBe(0);
+  });
+
+  it('só a equipe lê e muda o status das mensagens', async () => {
+    // (a conta demo ficou bloqueada no teste de tentativas; usamos uma nova)
+    const passageiro = cliente();
+    await passageiro('POST', '/auth/cadastro', { nome: 'Passageiro', email: 'p@teste.com', senha: 'senha-passageiro', aceite: true });
+    expect((await passageiro('GET', '/feedback')).status).toBe(403);
+
+    const equipe = cliente();
+    await equipe('POST', '/auth/login', { email: CONTA_EQUIPE.email, senha: CONTA_EQUIPE.senha });
+    const lista = await equipe('GET', '/feedback?status=novo');
+    expect(lista.status).toBe(200);
+    const primeira = lista.corpo.feedbacks[0];
+    expect(primeira.linha).toBe('201');
+    expect((await equipe('PATCH', `/feedback/${primeira.id}`, { status: 'resolvido' })).status).toBe(204);
   });
 });

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { api, type LinhaDetalhe, type Ponto, type PosicaoVeiculo } from '../api';
+import { api, type LinhaDetalhe, type Lotacao, type Ponto, type PosicaoVeiculo } from '../api';
+import { SeloLotacao } from '../componentes/Lotacao';
 import { useTempoReal } from '../contexto/TempoReal';
 import { MapaFrota } from '../componentes/MapaFrota';
 
@@ -21,6 +22,7 @@ export function PaginaMapa() {
   const [erro, setErro] = useState<string | null>(null);
   const [visiveis, setVisiveis] = useState<Set<number>>(new Set());
   const [selecionada, setSelecionada] = useState<number | null>(null);
+  const [lotacoes, setLotacoes] = useState<Record<string, Lotacao>>({});
   const { posicoes, status } = useTempoReal();
 
   useEffect(() => {
@@ -38,6 +40,14 @@ export function PaginaMapa() {
         setErro('Não foi possível carregar as linhas. Verifique sua conexão e recarregue a página.');
       }
     })();
+  }, []);
+
+  // Lotação informada pelos passageiros (RF09): muda devagar, 30 s basta.
+  useEffect(() => {
+    const carregar = () => api.lotacao().then(setLotacoes).catch(() => {});
+    carregar();
+    const t = setInterval(carregar, 30_000);
+    return () => clearInterval(t);
   }, []);
 
   const veiculos = useMemo(() => [...posicoes.values()], [posicoes]);
@@ -111,6 +121,7 @@ export function PaginaMapa() {
                   <th scope="col">Ônibus</th>
                   <th scope="col">Próximo ponto</th>
                   <th scope="col">Velocidade</th>
+                  <th scope="col">Lotação</th>
                 </tr>
               </thead>
               <tbody>
@@ -134,6 +145,7 @@ export function PaginaMapa() {
                           <span className="sentido"> ({prox.sentido})</span>
                         </td>
                         <td>{v.velocidadeKmh === 0 ? 'Parado no ponto' : `${v.velocidadeKmh} km/h`}</td>
+                        <td><SeloLotacao lotacao={lotacoes[v.veiculoId] ?? null} compacto /></td>
                       </tr>
                     );
                   })}

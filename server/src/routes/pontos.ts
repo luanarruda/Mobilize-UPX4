@@ -5,6 +5,7 @@ import { catalogo } from '../services/catalogo.js';
 import { estimarSegundos, preverChegadas, PARAMETROS } from '../services/previsao.js';
 import { agoraLocal, hhmmParaMinutos } from '../services/tempo.js';
 import { estado } from '../realtime/estado.js';
+import { lotacaoAtual } from '../services/lotacao.js';
 
 export const rotasPontos = Router();
 
@@ -46,6 +47,7 @@ rotasPontos.get('/:id/previsoes', (req, res) => {
     'SELECT saida FROM horarios WHERE linha_id = ? AND tipo_dia = ? ORDER BY saida',
   );
 
+  const lotacoes = lotacaoAtual();
   const grupos = [];
   for (const linha of catalogo.linhasDoPonto(ponto.id)) {
     const chegadas = preverChegadas(linha, ponto.id, estado.daLinha(linha.id));
@@ -79,7 +81,9 @@ rotasPontos.get('/:id/previsoes', (req, res) => {
         sentido,
         destino: catalogo.destino(linha, sentido),
         chegadas: doSentido.map((c) => ({
+          veiculoId: c.veiculoId,
           prefixo: c.prefixo,
+          lotacao: lotacoes.get(c.veiculoId) ?? null,
           acessivel: c.acessivel,
           distanciaM: c.distanciaM,
           minutos: Math.round(c.segundos / 60),

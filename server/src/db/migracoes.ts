@@ -14,6 +14,13 @@ export const CONTA_DEMO = {
   senha: 'rotacerta2026',
 };
 
+// Conta da equipe do projeto: lê o canal de feedback (RF10).
+export const CONTA_EQUIPE = {
+  nome: 'Equipe RotaCerta',
+  email: 'equipe@rotacerta.com.br',
+  senha: 'equipe2026',
+};
+
 type Migracao = (banco: DatabaseSync) => void;
 
 const MIGRACOES: Migracao[] = [
@@ -102,6 +109,47 @@ const MIGRACOES: Migracao[] = [
   // computadores já a rodaram); por isso a remoção é uma migração nova.
   (banco) => {
     banco.exec('DROP TABLE IF EXISTS avisos');
+  },
+
+  // 4 — Etapa 5: lotação colaborativa (RF09) e canal de feedback (RF10).
+  (banco) => {
+    banco.exec(`
+      -- Papel do usuário: 'passageiro' (padrão) ou 'equipe' (lê o feedback).
+      ALTER TABLE usuarios ADD COLUMN papel TEXT NOT NULL DEFAULT 'passageiro'
+        CHECK (papel IN ('passageiro', 'equipe'));
+
+      -- Cada relato de lotação feito por um passageiro. Não guardamos IP:
+      -- "autor" é o hash de um identificador anônimo sorteado pelo navegador,
+      -- usado só para impedir que a mesma pessoa conte duas vezes.
+      CREATE TABLE lotacao_relatos (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        veiculo_id  INTEGER NOT NULL REFERENCES veiculos(id) ON DELETE CASCADE,
+        nivel       INTEGER NOT NULL CHECK (nivel BETWEEN 0 AND 3),
+        autor       TEXT NOT NULL,
+        usuario_id  INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+        criado_em   TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+      );
+      CREATE INDEX idx_lotacao_veiculo_tempo ON lotacao_relatos(veiculo_id, criado_em DESC);
+
+      CREATE TABLE feedbacks (
+        id             INTEGER PRIMARY KEY AUTOINCREMENT,
+        tipo           TEXT NOT NULL CHECK (tipo IN ('sugestao', 'elogio', 'problema')),
+        mensagem       TEXT NOT NULL CHECK (length(mensagem) BETWEEN 10 AND 1000),
+        linha_id       INTEGER REFERENCES linhas(id) ON DELETE SET NULL,
+        contato_email  TEXT,
+        usuario_id     INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+        status         TEXT NOT NULL DEFAULT 'novo' CHECK (status IN ('novo', 'lido', 'resolvido')),
+        criado_em      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+      );
+      CREATE INDEX idx_feedbacks_status ON feedbacks(status, criado_em DESC);
+    `);
+
+    banco
+      .prepare(
+        `INSERT INTO usuarios (nome, email, senha_hash, papel, consentimento_em)
+         VALUES (?, ?, ?, 'equipe', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
+      )
+      .run(CONTA_EQUIPE.nome, CONTA_EQUIPE.email, bcrypt.hashSync(CONTA_EQUIPE.senha, 10));
   },
 ];
 

@@ -43,7 +43,8 @@ rotacerta/
         ├── componentes/    Layout, mapa, barra de acessibilidade
         ├── contexto/       sessão, favoritos, tempo real (WebSocket), acessibilidade
         ├── hooks/          usePosicoes
-        └── paginas/        Mapa, Planejar, Linhas, Linha, Ponto, Favoritos, Entrar, Conta
+        └── paginas/        Mapa, Planejar, Linhas, Linha, Ponto, Favoritos, Entrar, Conta,
+                            Feedback, Equipe, Imprimir, Privacidade
 ```
 
 ## Telas
@@ -59,15 +60,21 @@ rotacerta/
 | `/entrar`, `/cadastro` | Login e criação de conta opcional (RF08) |
 | `/conta` | Dados da conta, baixar meus dados, excluir conta (RF08 + LGPD) |
 | `/privacidade` | Política de privacidade |
+| `/feedback` | Canal de feedback: problema, sugestão ou elogio, com ou sem conta (RF10) |
+| `/equipe` | Mensagens recebidas, só para a conta da equipe (RF10) |
+| `/linhas/:id/imprimir` | Quadro de horários para imprimir ou salvar em PDF (RF11) |
 
-### Conta de demonstração
+A lotação (RF09) aparece em cada chegada da página do ponto, com o botão "Informar lotação", e na tabela do mapa ao vivo.
 
-Existe em qualquer computador, porque é criada junto com o banco:
+### Contas de demonstração
 
-- **E-mail:** `demo@rotacerta.com.br`
-- **Senha:** `rotacerta2026`
+Existem em qualquer computador, porque são criadas junto com o banco:
 
-Ela já vem com a linha 201 e o ponto Facens nos favoritos. Contas criadas pelo site ficam guardadas **só no computador onde foram criadas**, no arquivo `server/dados/rotacerta.db`.
+| Conta | E-mail | Senha | Para quê |
+|---|---|---|---|
+| Passageiro | `demo@rotacerta.com.br` | `rotacerta2026` | Já vem com a linha 201 e o ponto Facens nos favoritos |
+| Equipe | `equipe@rotacerta.com.br` | `equipe2026` | Lê as mensagens do canal de feedback em `/equipe` |
+ Contas criadas pelo site ficam guardadas **só no computador onde foram criadas**, no arquivo `server/dados/rotacerta.db`.
 
 
 ## API
@@ -91,6 +98,11 @@ Ela já vem com a linha 201 e o ponto Facens nos favoritos. Contas criadas pelo 
 | PUT | `/api/auth/preferencias` | Salva fonte e contraste na conta |
 | GET | `/api/auth/meus-dados` | Baixa os dados da conta em JSON (LGPD) |
 | DELETE | `/api/auth/conta` | Exclui a conta e os dados (LGPD) |
+| GET | `/api/lotacao` | Lotação atual dos ônibus com relatos recentes |
+| POST | `/api/lotacao` | Informa lotação `{ veiculoId, nivel: 0–3, autor }` (sem conta) |
+| POST | `/api/feedback` | Envia mensagem `{ tipo, mensagem, linhaId?, email? }` (sem conta) |
+| GET | `/api/feedback?status=` | Lista as mensagens (só a equipe) |
+| PATCH | `/api/feedback/:id` | Muda o status: `novo`, `lido` ou `resolvido` (só a equipe) |
 | GET | `/api/favoritos` | Favoritos da conta (exige login) |
 | PUT/DELETE | `/api/favoritos/:tipo/:id` | Adiciona/remove favorito (`tipo` = `linha` ou `ponto`) |
 | POST | `/api/favoritos/importar` | Junta os favoritos do navegador aos da conta |
@@ -211,6 +223,41 @@ Uma migração que já foi aplicada **nunca é editada**, porque outros computad
 
 **Sem CORS.** O site e a API ficam na mesma origem (o Vite faz o proxy em desenvolvimento), então o pacote `cors`, que liberava qualquer site, foi removido. Isso fecha uma porta para ataques que usam o cookie de sessão a partir de outro domínio.
 
+### Lotação, feedback e impressão (Etapa 5)
+
+**Lotação colaborativa (RF09): como vários relatos viram uma informação.** Quatro níveis: vazio, lugares sentados, em pé e lotado (0 a 3).
+- **Validade de 20 minutos.** A lotação muda a cada ponto, e um relato de uma hora atrás não diz nada sobre agora.
+- **Uma voz por pessoa.** Se alguém informar duas vezes, vale só o último relato dessa pessoa.
+- **Média ponderada pela idade.** Um relato feito agora pesa 1; um de quase 20 minutos atrás pesa quase nada. Assim a informação acompanha o ônibus enchendo ou esvaziando, sem ficar presa a relatos antigos.
+- **Sem relato, a tela mostra "Lotação não informada"** em vez de inventar um valor. A informação depende de os passageiros participarem; é a mesma ideia dos alertas de trânsito do Waze.
+- A lógica fica numa função pura, `consolidarLotacao`, testada separadamente.
+
+**Lotação sem conta e sem expor ninguém (LGPD).** Exigir login para tocar em "Em pé" faria quase ninguém informar, então o relato é aceito sem conta. Para contar uma voz por pessoa, o navegador sorteia um identificador anônimo (`crypto.randomUUID()`), guardado no `localStorage`. No banco fica só o **hash** desse identificador, e o IP não é gravado. Há um limite de 10 relatos a cada 10 minutos por pessoa, para ninguém distorcer a informação com relatos em massa. Relatos com mais de 7 dias são apagados.
+
+**Canal de feedback (RF10).** Aceita problema, sugestão ou elogio, com ou sem conta, e opcionalmente ligado a uma linha. A página de cada linha tem o atalho "Relatar um problema nesta linha".
+- **Pote de mel (*honeypot*) contra spam:** o formulário tem um campo escondido de quem enxerga e também do leitor de tela (`aria-hidden`, fora da tela). Robôs de spam preenchem todos os campos; se esse vier preenchido, a API finge que deu certo, mas não grava nada. É uma alternativa ao CAPTCHA, que atrapalha justamente quem tem deficiência visual ou pouca prática.
+- **Limite de 5 mensagens por hora por IP.**
+- **Papéis de usuário:** a coluna `papel` (`passageiro` ou `equipe`) define quem lê as mensagens. A rota de leitura usa o middleware `exigirEquipe`: um passageiro logado recebe 403 (proibido), e quem não está logado recebe 401 (não autenticado).
+- **LGPD:** se alguém exclui a conta, as mensagens continuam para a equipe, mas **anônimas**, porque o e-mail de contato é apagado junto. "Baixar meus dados" agora inclui as mensagens enviadas e quantos relatos de lotação a pessoa fez.
+
+**Impressão e PDF (RF11) com o próprio navegador.** A página `/linhas/:id/imprimir` monta uma "folha" com o itinerário e os três quadros de horários. Os horários ficam agrupados por hora (`05h | 00 15 30 45`), como nos quadros de terminal. O botão chama `window.print()`, e na janela de impressão a opção **"Salvar como PDF"** gera o arquivo. Por que não uma biblioteca de PDF:
+- não adiciona dependência ao projeto;
+- o texto do PDF continua **selecionável e pesquisável**, diferente de uma "foto" da tela, e um leitor de tela consegue ler o arquivo;
+- respeita o papel e as margens da impressora de cada pessoa.
+
+O CSS `@media print` esconde os botões, força preto no branco e evita que um quadro seja cortado entre duas páginas (`break-inside: avoid`). O título da página vira o nome sugerido do arquivo ("Horários linha 201 - RotaCerta.pdf").
+
+### Revisão de acessibilidade (RF07)
+
+Todas as telas foram verificadas com o **axe-core**, a ferramenta automática de checagem WCAG mais usada, por exemplo pelo Lighthouse do Chrome, nas regras WCAG 2.1 níveis A e AA, nos modos normal e alto contraste com fonte A++. **Resultado: nenhuma violação.** Os dois problemas que a ferramenta encontrou foram corrigidos:
+
+- **Rótulo no nome (WCAG 2.5.3).** Os botões "A+" e "A++" tinham o nome "Texto grande" para o leitor de tela. Quem usa **comando de voz** diz o que vê ("clicar A+"), e o comando não funcionava. Agora o nome é o texto visível mais uma explicação escondida: "A+ (texto grande)". Valeu o mesmo para o botão "Favoritar".
+- **Rolagem pelo teclado (WCAG 2.1.1).** Nas páginas sem nenhum link, como a de privacidade, o conteúdo rolava dentro de uma área que o teclado não alcançava. Agora, nas páginas de texto quem rola é a própria página, e as setas e o Page Down funcionam sem nada especial. Só as telas com mapa usam rolagem interna, e elas sempre têm itens focáveis no painel. A regra usa o seletor CSS `:has()`: `#root:has(.pagina-mapa)` aplica a altura fixa só quando a página tem mapa.
+
+Também testamos **navegar só com o teclado**: planejar um trajeto do início ao fim sem mouse funciona. Esse teste encontrou mais um defeito. Em desenvolvimento, o React (StrictMode) roda os efeitos duas vezes, e a segunda rodada movia o foco para o conteúdo logo ao abrir o site, de modo que o primeiro Tab pulava o link "Pular para o conteúdo". A correção foi comparar com o endereço anterior em vez de "pular a primeira vez".
+
+Para repetir a verificação, a forma mais simples é a aba **Lighthouse** do Chrome (F12 → Lighthouse → Acessibilidade), que usa o mesmo axe-core.
+
 ### Layout responsivo
 
 A documentação define que **nesta fase não haverá versão para celular**, ou seja, nenhum aplicativo nem recursos próprios de celular. Mesmo assim, o site se adapta a qualquer largura de tela, por três motivos:
@@ -240,5 +287,5 @@ As linhas `100`, `201`, `302`, `405`, `510` e `BRT1` são **fictícias**, montad
 - [x] **Etapa 3:** planejador de trajetos com baldeação (RF04)
 - [x] **Etapa 4:** favoritos (RF06), cadastro e login (RF08)
 - [ ] ~~Notificações (RF05)~~: retirado do escopo pelo grupo. Com dados simulados, os avisos de atraso e desvio seriam inventados. Pode voltar quando houver dados reais da operação.
-- [ ] Etapa 5: lotação colaborativa (RF09), feedback (RF10), impressão de horários (RF11)
+- [x] **Etapa 5:** lotação colaborativa (RF09), feedback (RF10), impressão de horários (RF11), revisão de acessibilidade (RF07)
 - [ ] Etapa 6: dados reais (SPTrans Olho Vivo), testes e documentação final

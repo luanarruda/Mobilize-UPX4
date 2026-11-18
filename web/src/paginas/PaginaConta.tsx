@@ -1,6 +1,6 @@
 // RF08 — Minha conta, com os direitos da LGPD: ver, baixar e excluir os dados.
 import { useEffect, useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useSessao } from '../contexto/Sessao';
 import { useAcessibilidade } from '../contexto/Acessibilidade';
 
@@ -46,6 +46,7 @@ export function PaginaConta() {
       </dl>
 
       <div className="acoes">
+        {usuario.papel === 'equipe' && <Link to="/equipe" className="botao-primario como-botao">Mensagens recebidas</Link>}
         <button type="button" className="botao-secundario" onClick={fazerSair}>Sair</button>
       </div>
 

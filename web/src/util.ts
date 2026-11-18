@@ -33,3 +33,26 @@ export function relogio(baseIso: string, segundos: number) {
   return new Date(new Date(baseIso).getTime() + segundos * 1000)
     .toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 }
+
+/** Identificador anônimo deste navegador, usado só para a lotação contar uma voz por pessoa. */
+export function autorAnonimo() {
+  const chave = 'rotacerta:autor';
+  try {
+    let id = localStorage.getItem(chave);
+    if (!id) {
+      id = crypto.randomUUID();
+      localStorage.setItem(chave, id);
+    }
+    return id;
+  } catch {
+    return crypto.randomUUID(); // sem localStorage: um id por visita
+  }
+}
+
+/** "agora", "há 3 min", "há 1 h". */
+export function haQuanto(iso: string) {
+  const min = Math.round((Date.now() - Date.parse(iso)) / 60_000);
+  if (min < 1) return 'agora';
+  if (min < 60) return `há ${min} min`;
+  return `há ${Math.round(min / 60)} h`;
+}

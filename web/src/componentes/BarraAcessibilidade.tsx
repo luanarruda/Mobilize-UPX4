@@ -13,15 +13,18 @@ export function BarraAcessibilidade() {
     <div className="barra-acessibilidade" role="group" aria-label="Opções de acessibilidade">
       <div className="grupo-fonte" role="group" aria-label="Tamanho do texto">
         {OPCOES.map((o) => (
+          // Sem aria-label: o nome acessível é o texto visível ("A+") seguido
+          // de uma explicação escondida. Assim, quem usa comando de voz pode
+          // dizer "clicar A+" (WCAG 2.5.3 — rótulo no nome).
           <button
             key={o.valor}
             type="button"
             aria-pressed={fonte === o.valor}
-            aria-label={o.nome}
             title={o.nome}
             onClick={() => setFonte(o.valor)}
           >
             {o.rotulo}
+            <span className="visualmente-oculto"> ({o.nome.toLowerCase()})</span>
           </button>
         ))}
       </div>

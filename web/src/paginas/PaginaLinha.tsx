@@ -68,6 +68,11 @@ export function PaginaLinha() {
           {veiculos.filter((v) => v.acessivel).length} com acessibilidade
         </p>
 
+        <div className="acoes">
+          <Link to={`/linhas/${linha.id}/imprimir`} className="botao-secundario como-botao">Imprimir horários ou salvar em PDF</Link>
+          <Link to={`/feedback?linha=${linha.id}`}>Relatar um problema nesta linha</Link>
+        </div>
+
         <section aria-labelledby="titulo-proximas" className="bloco">
           <h2 id="titulo-proximas">Próximas saídas de {linha.pontos[0].nome}</h2>
           {proximas.length > 0 ? (

@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom';
 import { api, type PontoDetalhe, type Previsoes } from '../api';
 import { horarioDaqui } from '../util';
 import { BotaoFavorito } from '../componentes/BotaoFavorito';
+import { InformarLotacao, SeloLotacao } from '../componentes/Lotacao';
 
 const ATUALIZAR_MS = 15_000;
 
@@ -94,6 +95,8 @@ export function PaginaPonto() {
                       Ônibus {c.prefixo}
                       {c.acessivel ? ' · ♿ acessível' : ' · sem elevador'}
                     </span>
+                    <SeloLotacao lotacao={c.lotacao} />
+                    <InformarLotacao veiculoId={c.veiculoId} prefixo={c.prefixo} aoInformar={atualizar} />
                   </li>
                 ))}
               </ol>
@@ -110,7 +113,8 @@ export function PaginaPonto() {
 
       <p className="nota">
         A previsão considera a posição atual de cada ônibus, a velocidade média da linha e o tempo
-        parado nos pontos do caminho. Pode variar com o trânsito.
+        parado nos pontos do caminho. Pode variar com o trânsito. A lotação é informada pelos próprios
+        passageiros e vale por 20 minutos.
       </p>
     </div>
   );

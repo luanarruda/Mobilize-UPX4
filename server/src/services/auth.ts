@@ -1,7 +1,7 @@
 // RF08 — Contas de usuário: senhas, sessões e proteção contra força bruta.
 import { createHash, randomBytes } from 'node:crypto';
 import bcrypt from 'bcryptjs';
-import type { Request } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import { db } from '../db/conexao.js';
 
 // ---------------------------------------------------------------------------
@@ -70,18 +70,19 @@ export interface Usuario {
   id: number;
   nome: string;
   email: string;
+  papel: 'passageiro' | 'equipe';
   preferencias: Record<string, unknown>;
   criadoEm: string;
 }
 
-type LinhaUsuario = { id: number; nome: string; email: string; preferencias: string; criado_em: string };
+type LinhaUsuario = { id: number; nome: string; email: string; papel: Usuario['papel']; preferencias: string; criado_em: string };
 
 const paraUsuario = (l: LinhaUsuario): Usuario => ({
-  id: l.id, nome: l.nome, email: l.email, preferencias: JSON.parse(l.preferencias), criadoEm: l.criado_em,
+  id: l.id, nome: l.nome, email: l.email, papel: l.papel, preferencias: JSON.parse(l.preferencias), criadoEm: l.criado_em,
 });
 
 export function buscarUsuario(id: number): Usuario | null {
-  const l = db.prepare('SELECT id, nome, email, preferencias, criado_em FROM usuarios WHERE id = ?').get(id) as
+  const l = db.prepare('SELECT id, nome, email, papel, preferencias, criado_em FROM usuarios WHERE id = ?').get(id) as
     | LinhaUsuario
     | undefined;
   return l ? paraUsuario(l) : null;
@@ -93,7 +94,7 @@ export function usuarioDaRequisicao(req: Request): Usuario | null {
   if (typeof token !== 'string' || !token) return null;
   const l = db
     .prepare(
-      `SELECT u.id, u.nome, u.email, u.preferencias, u.criado_em
+      `SELECT u.id, u.nome, u.email, u.papel, u.preferencias, u.criado_em
          FROM sessoes s JOIN usuarios u ON u.id = s.usuario_id
         WHERE s.token_hash = ? AND s.expira_em > ?`,
     )
@@ -127,3 +128,34 @@ export function registrarErro(chave: string) {
 }
 
 export const limparErros = (chave: string) => tentativas.delete(chave);
+
+/** Middleware: só segue se houver alguém logado (guarda em res.locals.usuario). */
+export function exigirLogin(req: Request, res: Response, next: NextFunction) {
+  const usuario = usuarioDaRequisicao(req);
+  if (!usuario) return res.status(401).json({ erro: 'Entre na sua conta.' });
+  res.locals.usuario = usuario;
+  next();
+}
+
+/** Middleware: só para a conta da equipe. */
+export function exigirEquipe(req: Request, res: Response, next: NextFunction) {
+  const usuario = usuarioDaRequisicao(req);
+  if (!usuario) return res.status(401).json({ erro: 'Entre na sua conta.' });
+  if (usuario.papel !== 'equipe') return res.status(403).json({ erro: 'Acesso só para a equipe.' });
+  res.locals.usuario = usuario;
+  next();
+}
+
+// Limite simples por chave e janela de tempo (feedback, lotação).
+const janelas = new Map<string, number[]>();
+export function dentroDoLimite(chave: string, maximo: number, janelaMs: number) {
+  const agora = Date.now();
+  const recentes = (janelas.get(chave) ?? []).filter((t) => agora - t < janelaMs);
+  if (recentes.length >= maximo) {
+    janelas.set(chave, recentes);
+    return false;
+  }
+  recentes.push(agora);
+  janelas.set(chave, recentes);
+  return true;
+}

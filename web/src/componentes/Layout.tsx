@@ -8,13 +8,15 @@ export function Layout() {
   // anuncia a nova página, como aconteceria num site tradicional.
   const { pathname } = useLocation();
   const principal = useRef<HTMLElement>(null);
-  const primeiraVez = useRef(true);
+  // Compara com o endereço anterior, em vez de "pular a primeira vez": em
+  // desenvolvimento o React (StrictMode) roda os efeitos duas vezes, e a
+  // segunda roubava o foco logo ao abrir o site — o 1º Tab pulava o
+  // link "Pular para o conteúdo".
+  const ultimoEndereco = useRef(pathname);
   const { usuario } = useSessao();
   useEffect(() => {
-    if (primeiraVez.current) {
-      primeiraVez.current = false;
-      return;
-    }
+    if (ultimoEndereco.current === pathname) return;
+    ultimoEndereco.current = pathname;
     principal.current?.focus();
   }, [pathname]);
 
@@ -50,6 +52,14 @@ export function Layout() {
       <main id="conteudo" tabIndex={-1} ref={principal}>
         <Outlet />
       </main>
+      <footer className="rodape">
+        <span>RotaCerta · Projeto acadêmico Facens · Grupo Mobilize · 2026</span>
+        <nav aria-label="Rodapé">
+          <Link to="/feedback">Fale conosco</Link>
+          <Link to="/privacidade">Privacidade</Link>
+          {usuario?.papel === 'equipe' && <Link to="/equipe">Mensagens recebidas</Link>}
+        </nav>
+      </footer>
     </>
   );
 }
