@@ -21,6 +21,8 @@ Abra **http://localhost:5173**.
 | `npm run db:reset` | Apaga o arquivo do banco. No próximo `npm run dev` ele é recriado do zero. Use quando mudar o `schema.sql` ou os dados de demonstração. |
 | `npm test` | Roda os testes automáticos do back-end (Vitest). |
 
+**Testar no celular:** com o `npm run dev` rodando, o Vite mostra uma linha `Network: http://192.168.x.x:5173`. Com o celular **na mesma rede Wi-Fi**, abra esse endereço no navegador dele. Na primeira vez, o Windows pode perguntar se libera o Node no firewall: permita em "Redes privadas". O botão "usar o ponto mais próximo de mim" não funciona por esse endereço, porque o navegador só libera a localização em `https` ou em `localhost`.
+
 Configuração opcional: copie `server/.env.example` para `server/.env` e altere o que quiser. Para apresentações, `SIMULADOR_VELOCIDADE=5` deixa os ônibus 5× mais rápidos.
 
 ## Estrutura
@@ -150,6 +152,24 @@ Os parâmetros ficam juntos em `services/previsao.ts` (`PARAMETROS`), para o gru
 **"Usar o ponto mais próximo de mim".** Usa a localização do navegador, que só funciona com a permissão da pessoa, e procura o ponto mais perto com a fórmula de Haversine. A localização **não é enviada ao servidor**: o cálculo é feito no próprio navegador, o que atende à coleta mínima de dados da LGPD (seção 8 da documentação).
 
 **Limitações conhecidas.** O planejamento parte de pontos de parada, e não de endereços: para buscar por endereço seria preciso um serviço de geocodificação. Linhas sem ônibus em operação no momento não entram no cálculo.
+
+### Layout responsivo
+
+A documentação define que **nesta fase não haverá versão para celular**, ou seja, nenhum aplicativo nem recursos próprios de celular. Mesmo assim, o site se adapta a qualquer largura de tela, por três motivos:
+
+1. **Acessibilidade (RF07).** Quem aumenta o zoom do navegador no computador, como a persona Helena, recebe na prática uma tela estreita: um notebook de 1366 px com zoom de 200% equivale a uma tela de 683 px. O critério *Reflow* da WCAG 2.1 (1.4.10) exige que o conteúdo continue legível **sem rolagem horizontal** até 400% de zoom.
+2. **Custo.** Tornar responsivas 5 telas agora é barato. As etapas 4 e 5 trazem novas telas, que já nascem no padrão em vez de serem consertadas depois.
+3. **A documentação cita turistas e pessoas na rua** como público. Um layout que funciona no navegador do celular não contradiz a decisão de não ter app: é o mesmo site.
+
+Como foi feito, tudo em `estilos.css`:
+- **Ponto de quebra em 56rem (896 px).** Abaixo disso, o mapa e o painel deixam de ficar lado a lado e passam a ficar um embaixo do outro. No "Mapa ao vivo" o mapa vem primeiro; nas outras telas, o texto vem primeiro e o mapa depois. Em media query, `rem` vale sempre 16 px (o padrão do navegador), sem depender dos botões A+/A++, mas o zoom do navegador ativa esse layout.
+- **Menu sempre visível.** Em tela estreita, os três itens ficam numa linha abaixo do logo. Evitamos o menu "hambúrguer" (☰), que esconde as opções e é pouco intuitivo para quem tem pouca prática com tecnologia.
+- **Grades com `minmax(min(18rem, 100%), 1fr)`**: o cartão tem 18rem de largura ideal, mas nunca fica mais largo que a tela.
+- **Campos com `width: 100%; min-width: 0`.** Sem isso, um `<select>` fica da largura da opção mais comprida e vaza da tela.
+- **Altura com flexbox em vez de `calc(100vh - 66px)`.** A conta fixa quebrava quando o cabeçalho crescia com a fonte A++. Isso era um defeito também no desktop, e foi corrigido junto. Usamos `dvh`, a altura que de fato aparece no celular, descontando a barra de endereço do navegador.
+- **Textos escondidos para leitor de tela presos ao contêiner** (`position: relative` nas áreas que rolam). Antes, eles "escapavam" do painel e criavam uma barra de rolagem extra na página.
+
+Verificação: em 320 px (o menor celular comum), 390 px e 1366 px, nenhuma tela tem rolagem horizontal.
 
 ## Dados de demonstração
 

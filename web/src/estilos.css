@@ -37,6 +37,17 @@
 
 * { box-sizing: border-box; }
 body { margin: 0; }
+
+/* Estrutura da página: cabeçalho em cima e o resto ocupando a altura que
+   sobra. Antes usávamos calc(100vh - 66px), que quebrava quando o cabeçalho
+   crescia (fonte A++ ou tela estreita). Com flexbox, a altura se ajusta sozinha.
+   dvh = altura visível de verdade no celular (descontando a barra do navegador). */
+#root { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
+#root > main { flex: 1; min-height: 0; overflow-y: auto; }
+/* Áreas que rolam por dentro precisam de position: relative; senão os textos
+   escondidos para leitor de tela (.visualmente-oculto, que usa position:
+   absolute) "escapam" delas e esticam a página inteira. */
+#root > main, .painel, .pagina-texto { position: relative; }
 h1, h2 { line-height: 1.2; margin: 0; }
 h1 { font-size: 1.4rem; }
 h2 { font-size: 1.15rem; }
@@ -83,7 +94,7 @@ h2 { font-size: 1.15rem; }
 }
 .cabecalho nav ul { display: flex; gap: 0.25rem; list-style: none; margin: 0; padding: 0; }
 .cabecalho nav a {
-  display: block; padding: 0.4rem 0.8rem; border-radius: var(--raio);
+  display: block; white-space: nowrap; padding: 0.4rem 0.8rem; border-radius: var(--raio);
   color: var(--texto); text-decoration: none; font-weight: 600;
 }
 .cabecalho nav a.active { background: var(--primaria); color: var(--primaria-texto); }
@@ -111,7 +122,8 @@ main:focus { outline: none; }
 .pagina-mapa {
   display: grid;
   grid-template-columns: minmax(340px, 30%) 1fr;
-  height: calc(100vh - 66px);
+  grid-template-rows: minmax(0, 1fr); /* a linha da grade não cresce além da tela */
+  height: 100%;
 }
 .painel {
   overflow-y: auto;
@@ -202,13 +214,14 @@ a { color: var(--primaria); }
 .busca { display: grid; gap: 0.35rem; max-width: 36rem; }
 .busca label { font-weight: 600; }
 .busca input {
+  width: 100%; min-width: 0;
   font: inherit; padding: 0.6rem 0.8rem; min-height: 48px;
   border: 2px solid var(--borda); border-radius: var(--raio);
   background: var(--superficie); color: var(--texto);
 }
 .contagem { min-height: 1.5em; color: var(--texto-suave); font-size: 0.9rem; }
 
-.cartoes { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr)); }
+.cartoes { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; grid-template-columns: repeat(auto-fill, minmax(min(18rem, 100%), 1fr)); }
 .cartao {
   display: flex; align-items: center; gap: 0.75rem; height: 100%;
   padding: 0.75rem 0.9rem; border: 2px solid var(--borda); border-radius: var(--raio);
@@ -225,7 +238,7 @@ a { color: var(--primaria); }
 .selo { margin-left: 0.4rem; font-size: 0.8rem; font-weight: 600; }
 
 /* Página da linha: texto à esquerda, mapa fixo à direita. */
-.pagina-linha { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 40%); height: calc(100vh - 66px); }
+.pagina-linha { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 40%); grid-template-rows: minmax(0, 1fr); height: 100%; }
 .pagina-linha > .pagina-texto { overflow-y: auto; max-width: none; }
 .mapa-linha { border-left: 1px solid var(--borda); }
 .mapa-linha .mapa { height: 100%; }
@@ -235,7 +248,7 @@ a { color: var(--primaria); }
 .proximas { list-style: none; padding: 0; margin: 0; display: flex; gap: 0.5rem; flex-wrap: wrap; }
 .proximas li { font-size: 1.3rem; font-weight: 700; padding: 0.3rem 0.8rem; border: 2px solid var(--primaria); border-radius: var(--raio); }
 
-.itinerarios { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 1.5rem; }
+.itinerarios { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr)); gap: 1.5rem; }
 .itinerarios h3 { font-size: 1rem; margin: 0 0 0.5rem; }
 .itinerario { list-style: none; margin: 0; padding: 0; }
 .itinerario li { position: relative; padding: 0 0 0.9rem 1.6rem; }
@@ -269,7 +282,7 @@ a { color: var(--primaria); }
 .cabecalho-previsoes h2 { margin: 0; }
 .previsoes { list-style: none; padding: 0; margin: 1rem 0; display: grid; gap: 0.75rem; }
 .previsao {
-  display: grid; grid-template-columns: minmax(14rem, 1fr) minmax(14rem, 1.2fr); gap: 1rem; align-items: center;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr)); gap: 1rem; align-items: center;
   padding: 0.9rem 1rem; border: 2px solid var(--borda); border-radius: var(--raio); background: var(--superficie);
 }
 .previsao-linha { display: flex; align-items: center; gap: 0.75rem; color: var(--texto); text-decoration: none; }
@@ -283,9 +296,11 @@ a { color: var(--primaria); }
 
 /* ---------- Planejador ---------- */
 .form-plano { display: grid; gap: 0.9rem; max-width: 34rem; }
+.form-plano > *, .campo > * { min-width: 0; }
 .campo { display: grid; gap: 0.3rem; }
 .campo label { font-weight: 600; }
 .campo select {
+  width: 100%; min-width: 0; /* sem isso, o nome mais longo da lista define a largura */
   font: inherit; min-height: 48px; padding: 0 0.6rem;
   border: 2px solid var(--borda); border-radius: var(--raio);
   background: var(--superficie); color: var(--texto);
@@ -327,3 +342,41 @@ a { color: var(--primaria); }
 .passo p { margin: 0 0 0.3rem; }
 .passo-caminhada { border-left-style: dashed; border-left-color: var(--texto-suave); display: block; }
 .passo-fim { border-left-color: transparent; display: block; }
+
+/* ---------- Telas estreitas: celular, tablet ou desktop com zoom alto ----------
+   Quem aumenta o zoom do navegador (Ctrl +) também cai aqui, porque o zoom
+   reduz a largura útil da tela. Isso atende ao critério "Reflow" da WCAG 2.1
+   (1.4.10): conteúdo legível com zoom de 400% sem rolagem horizontal.
+   Obs.: em media query, 1rem é sempre 16px (o tamanho padrão do navegador),
+   e não muda com os botões A+/A++. Então 56rem = 896px. */
+@media (max-width: 56rem) {
+  /* A página inteira rola normalmente, em vez de cada painel rolar por dentro. */
+  #root { height: auto; min-height: 100dvh; }
+  #root > main { overflow: visible; }
+
+  .cabecalho { flex-wrap: wrap; gap: 0.5rem 1rem; padding: 0.5rem 0.75rem; }
+  .barra-acessibilidade { gap: 0.4rem; }
+  /* Menu ocupa a linha de baixo inteira, com os três itens visíveis
+     (sem menu "hambúrguer", que esconde as opções de quem tem pouca prática). */
+  .cabecalho nav { order: 3; width: 100%; }
+  .cabecalho nav ul { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .cabecalho nav a { text-align: center; white-space: normal; padding: 0.45rem 0.3rem; font-size: 0.9rem; min-height: 44px; display: grid; place-items: center; }
+
+  .pagina-mapa, .pagina-linha { display: flex; flex-direction: column; height: auto; }
+  /* No mapa ao vivo o mapa vem primeiro; nas outras telas, o texto vem primeiro. */
+  .pagina-mapa .area-mapa { order: -1; height: 55vh; min-height: 280px; }
+  .mapa-linha { height: 55vh; min-height: 280px; border-left: 0; border-top: 1px solid var(--borda); }
+  .painel { border-right: 0; overflow: visible; }
+  .pagina-linha > .pagina-texto { overflow: visible; }
+
+  .pagina-texto { padding: 1rem 1rem 2rem; }
+  .previsao { gap: 0.6rem; }
+}
+
+@media (max-width: 30rem) {
+  .cabecalho { gap: 0.5rem; }
+  .barra-acessibilidade { gap: 0.3rem; }
+  .marca span { display: none; } /* só o ícone, para caber a barra de acessibilidade */
+  .barra-acessibilidade button, .grupo-fonte button { padding: 0 0.55rem; font-size: 0.85rem; }
+  .detalhe-linha th, .detalhe-linha td { padding: 0.4rem 0.25rem; }
+}

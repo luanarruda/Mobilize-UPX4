@@ -7,6 +7,9 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
+    // Aceita conexões de outros aparelhos da mesma rede Wi-Fi (para testar no
+    // celular pelo endereço "Network" que o Vite mostra ao iniciar).
+    host: true,
     proxy: {
       '/api': 'http://localhost:3333',
       '/ws': { target: 'ws://localhost:3333', ws: true },
