@@ -136,6 +136,14 @@ O SQLite é um banco relacional completo, com SQL, chaves estrangeiras, transaç
 **"Como sabem que a previsão está certa?"**
 O histórico de posições é gravado justamente para medir isso, e a precisão da previsão é um dos indicadores de sucesso da seção 8. Com dados reais, compara-se o previsto com o horário em que o ônibus de fato passou e ajustam-se os parâmetros, que ficam todos juntos em `PARAMETROS`, em `services/previsao.ts`.
 
+## Apresentando pelo link online (Render)
+
+Se o projeto estiver publicado no Render (ver README, "Publicar na internet"):
+- **Abra o link de 3 a 5 minutos antes.** No plano gratuito, o serviço dorme depois de 15 minutos sem visitas e leva cerca de 1 minuto para acordar.
+- O banco recomeça do zero quando o serviço dorme. As contas de demonstração continuam existindo, mas o que foi criado em ensaios anteriores (contas, mensagens, lotação) some, e assim a demonstração começa sempre "limpa".
+- A banca pode acessar o link pelo próprio celular, e o botão "usar o ponto mais próximo de mim" funciona porque o link é `https`.
+- Tenha o modo local (`npm run apresentacao`) como plano B, caso a internet do local falhe.
+
 ## Se algo der errado
 
 | Sintoma | Solução |

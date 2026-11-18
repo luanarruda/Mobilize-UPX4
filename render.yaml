@@ -1,0 +1,17 @@
+# Configuração de hospedagem no Render ("Blueprint").
+# O Render lê este arquivo e cria o serviço sozinho: New → Blueprint → este repositório.
+services:
+  - type: web
+    name: rotacerta
+    runtime: node
+    plan: free
+    # --include=dev: o TypeScript e o Vite (necessários para compilar) são
+    # dependências de desenvolvimento, que o npm pula quando NODE_ENV=production.
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/saude
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: NODE_ENV
+        value: production

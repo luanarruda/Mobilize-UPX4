@@ -10,9 +10,15 @@ import { rotasFavoritos } from './routes/favoritos.js';
 import { rotasLotacao } from './routes/lotacao.js';
 import { rotasFeedback } from './routes/feedback.js';
 import { estado } from './realtime/estado.js';
+import { config } from './config.js';
 
 export function criarApp() {
   const app = express();
+  // Na hospedagem (Render), as requisições chegam por um proxy que cuida do
+  // HTTPS. "trust proxy" faz o Express ler o IP real do visitante no cabeçalho
+  // X-Forwarded-For. Sem isso, todos os visitantes teriam o IP do proxy, e o
+  // limite de tentativas de login bloquearia todo mundo junto.
+  if (config.NODE_ENV === 'production') app.set('trust proxy', 1);
   // Sem cors(): o site e a API ficam na mesma origem (o Vite faz o proxy em
   // desenvolvimento). Bloquear outras origens dificulta ataques com cookies.
   app.use(express.json({ limit: '50kb' }));

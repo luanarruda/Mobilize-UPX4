@@ -30,6 +30,37 @@ Abra **http://localhost:5173**.
 
 **Testar no celular:** com o `npm run dev` rodando, o Vite mostra uma linha `Network: http://192.168.x.x:5173`. Com o celular **na mesma rede Wi-Fi**, abra esse endereço no navegador dele. Na primeira vez, o Windows pode perguntar se libera o Node no firewall: permita em "Redes privadas". O botão "usar o ponto mais próximo de mim" não funciona por esse endereço, porque o navegador só libera a localização em `https` ou em `localhost`.
 
+## Publicar na internet (link fixo)
+
+O projeto já vem pronto para o **Render** (render.com), no plano gratuito. O arquivo `render.yaml` descreve tudo, e não é preciso configurar nada à mão:
+
+1. Crie uma conta em render.com usando **"Sign in with GitHub"**.
+2. No painel, clique em **New → Blueprint**, escolha o repositório **Mobilize-UPX4** e clique em **Apply**.
+3. Espere de 3 a 5 minutos (instalação + compilação). O link fica parecido com `https://rotacerta.onrender.com`. Se esse nome já estiver em uso, o Render acrescenta um sufixo.
+
+A cada `git push` na `main`, o Render publica a versão nova sozinho.
+
+O que o `render.yaml` define:
+- **`buildCommand: npm ci --include=dev && npm run build`**: `npm ci` instala exatamente as versões do `package-lock.json`. O `--include=dev` é necessário porque o TypeScript e o Vite são dependências de desenvolvimento, que o npm pularia com `NODE_ENV=production`. Depois o `build` compila o site e a API.
+- **`startCommand: npm start`**: sobe a API, que também entrega o site, numa porta só.
+- **`healthCheckPath: /api/saude`**: o Render chama essa rota para saber se o sistema subiu.
+- **`NODE_VERSION: 24`** (também no arquivo `.node-version`): uma versão do Node que tem o `node:sqlite`.
+- **`NODE_ENV: production`**: liga o cookie `Secure` (só via HTTPS) e o *trust proxy* (ver abaixo).
+
+**Limitações do plano gratuito**, que não atrapalham uma demonstração:
+- **O serviço "dorme" depois de 15 minutos sem visitas**, e o primeiro acesso depois disso demora cerca de **1 minuto** para acordar. Na apresentação, abra o link alguns minutos antes.
+- **O banco é apagado a cada vez que o serviço dorme ou é atualizado**, porque o disco do plano gratuito é temporário. Como o banco se recria sozinho, as **duas contas de demonstração sempre existem**, mas contas, favoritos, relatos de lotação e mensagens criados no site somem. Para guardar dados de verdade, o próximo passo seria um banco hospedado. Com o código atual, a forma mais simples seria um SQLite em nuvem, como o Turso.
+- **Bônus:** como o link é `https`, o botão "usar o ponto mais próximo de mim" funciona também no celular.
+
+**Por que não a Vercel?** A Vercel é feita para *funções serverless*: cada requisição liga uma função, que responde e desliga. O RotaCerta precisa de um **processo que fica rodando sempre**:
+- o simulador move os ônibus a cada 2 segundos, mesmo sem ninguém pedindo;
+- o WebSocket empurra as posições para os navegadores sem parar;
+- o banco SQLite é um arquivo que precisa continuar existindo entre uma requisição e outra.
+
+A Vercel passou a aceitar WebSocket em 2026, mas cada conexão é uma execução de função, com limite de duração (5 minutos por padrão). Ela também não tem um processo contínuo para o simulador nem disco para o SQLite. Para rodar lá, seria preciso reescrever o simulador como cálculo sob demanda, trocar o WebSocket por consultas periódicas e mover o banco para um serviço externo. O Render roda o mesmo processo do `npm run apresentacao`, sem mudar nada no código.
+
+**Detalhe técnico — `trust proxy`.** No Render, as requisições passam por um proxy que cuida do HTTPS. Sem `app.set('trust proxy', 1)`, o Express veria o IP do proxy em todas as requisições, e o limite de tentativas de login bloquearia **todos os visitantes juntos** quando qualquer um errasse a senha 5 vezes. Com ele, o IP real vem do cabeçalho `X-Forwarded-For`, e cada visitante tem o seu próprio limite.
+
 Configuração opcional: copie `server/.env.example` para `server/.env` e altere o que quiser. Para apresentações, `SIMULADOR_VELOCIDADE=5` deixa os ônibus 5× mais rápidos.
 
 ## Estrutura
