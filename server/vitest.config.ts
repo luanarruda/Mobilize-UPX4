@@ -4,6 +4,6 @@ import { defineConfig } from 'vitest/config';
 // não toca no arquivo dados/rotacerta.db de quem está desenvolvendo.
 export default defineConfig({
   test: {
-    env: { DB_ARQUIVO: ':memory:', ADMIN_CHAVE: 'chave-de-teste' },
+    env: { DB_ARQUIVO: ':memory:' },
   },
 });

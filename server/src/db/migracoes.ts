@@ -20,7 +20,7 @@ const MIGRACOES: Migracao[] = [
   // 1 — estrutura base (linhas, pontos, horários...). Aplicada por popular.ts.
   () => {},
 
-  // 2 — Etapa 4: contas (RF08), favoritos (RF06) e avisos (RF05).
+  // 2 — Etapa 4: contas (RF08), favoritos (RF06) e avisos (RF05; removidos na 3).
   (banco) => {
     banco.exec(`
       CREATE TABLE usuarios (
@@ -95,6 +95,13 @@ const MIGRACOES: Migracao[] = [
           'Obras na pista: os ônibus seguem por rua paralela entre a Rodoviária e a Av. Ipanema. Os pontos continuam atendidos.',
         );
     }
+  },
+
+  // 3 — Avisos e notificações (RF05) retirados do escopo: com dados simulados,
+  // os avisos seriam inventados. Migração já aplicada não se edita (outros
+  // computadores já a rodaram); por isso a remoção é uma migração nova.
+  (banco) => {
+    banco.exec('DROP TABLE IF EXISTS avisos');
   },
 ];
 

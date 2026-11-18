@@ -18,7 +18,7 @@ export function PaginaPrivacidade() {
       </ul>
 
       <h2>Para que usamos</h2>
-      <p>Só para fazer o RotaCerta funcionar: entrar na conta, mostrar seus favoritos e os avisos das suas linhas. Não compartilhamos seus dados com ninguém.</p>
+      <p>Só para fazer o RotaCerta funcionar: entrar na conta e mostrar seus favoritos e suas preferências de leitura. Não compartilhamos seus dados com ninguém.</p>
 
       <h2>Seus direitos</h2>
       <p>

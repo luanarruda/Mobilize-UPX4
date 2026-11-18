@@ -1,11 +1,10 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import type { Aviso, PosicaoVeiculo } from '../api';
+import type { PosicaoVeiculo } from '../api';
 
 export type StatusConexao = 'conectando' | 'ao-vivo' | 'reconectando';
 
 interface ValorTempoReal {
   posicoes: Map<number, PosicaoVeiculo>;
-  avisos: Aviso[];
   status: StatusConexao;
 }
 
@@ -19,7 +18,6 @@ const Contexto = createContext<ValorTempoReal | null>(null);
  */
 export function ProvedorTempoReal({ children }: { children: ReactNode }) {
   const [posicoes, setPosicoes] = useState<Map<number, PosicaoVeiculo>>(new Map());
-  const [avisos, setAvisos] = useState<Aviso[]>([]);
   const [status, setStatus] = useState<StatusConexao>('conectando');
 
   useEffect(() => {
@@ -44,8 +42,6 @@ export function ProvedorTempoReal({ children }: { children: ReactNode }) {
             for (const p of msg.dados as PosicaoVeiculo[]) nova.set(p.veiculoId, p);
             return nova;
           });
-        } else if (msg.tipo === 'avisos') {
-          setAvisos(msg.dados as Aviso[]);
         }
       };
       socket.onclose = () => {
@@ -64,7 +60,7 @@ export function ProvedorTempoReal({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  return <Contexto.Provider value={{ posicoes, avisos, status }}>{children}</Contexto.Provider>;
+  return <Contexto.Provider value={{ posicoes, status }}>{children}</Contexto.Provider>;
 }
 
 export function useTempoReal() {

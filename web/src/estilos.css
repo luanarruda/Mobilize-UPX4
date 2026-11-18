@@ -343,7 +343,7 @@ a { color: var(--primaria); }
 .passo-caminhada { border-left-style: dashed; border-left-color: var(--texto-suave); display: block; }
 .passo-fim { border-left-color: transparent; display: block; }
 
-/* ---------- Etapa 4: favoritos, contas e avisos ---------- */
+/* ---------- Etapa 4: favoritos e contas ---------- */
 .pagina-estreita { max-width: 40rem; }
 .texto-corrido h2 { font-size: 1.1rem; }
 .texto-corrido li { margin-bottom: 0.4rem; }
@@ -359,29 +359,6 @@ a { color: var(--primaria); }
 .botao-favorito.compacto { min-width: 44px; justify-content: center; padding: 0; margin-left: auto; }
 :root[data-contraste='alto'] .botao-favorito.marcado { background: #000; color: #ffff00; border-color: #ffff00; }
 
-.faixa-avisos { background: #fef3c7; border-bottom: 2px solid #b45309; }
-.faixa-avisos > button {
-  width: 100%; display: flex; gap: 0.75rem; align-items: center; text-align: left;
-  font: inherit; font-weight: 600; color: #78350f; background: none; border: 0;
-  padding: 0.55rem 1.25rem; cursor: pointer; min-height: 44px;
-}
-.faixa-acao { margin-left: auto; text-decoration: underline; }
-.faixa-avisos .lista-avisos { padding: 0 1.25rem 0.9rem; }
-:root[data-contraste='alto'] .faixa-avisos { background: #000; border-color: #ffff00; }
-:root[data-contraste='alto'] .faixa-avisos > button { color: #ffff00; }
-
-.lista-avisos { list-style: none; margin: 0.75rem 0; padding: 0; display: grid; gap: 0.5rem; }
-.aviso { padding: 0.7rem 0.9rem; border-radius: var(--raio); border: 2px solid; border-left-width: 6px; background: var(--superficie); }
-.aviso p { margin: 0.15rem 0; }
-.aviso-titulo { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
-.aviso-tipo { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; padding: 0.1rem 0.45rem; border-radius: 4px; color: #fff; }
-/* Cada tipo tem cor E rótulo em texto: a informação não depende só da cor. */
-.aviso-atraso { border-color: #b45309; } .aviso-atraso .aviso-tipo { background: #92400e; }
-.aviso-desvio { border-color: #1d4ed8; } .aviso-desvio .aviso-tipo { background: #1e40af; }
-.aviso-interrupcao { border-color: #b91c1c; } .aviso-interrupcao .aviso-tipo { background: #991b1b; }
-a.codigo-linha { text-decoration: none; }
-.tag-aviso { color: #92400e; font-weight: 600; }
-:root[data-contraste='alto'] .tag-aviso { color: #ffff00; }
 
 .caixa-demo {
   display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
@@ -408,8 +385,6 @@ a.codigo-linha { text-decoration: none; }
 .confirmacao p { margin: 0; flex-basis: 100%; }
 
 .nota-conta { padding: 0.7rem 0.9rem; border-radius: var(--raio); background: var(--superficie); border: 1px solid var(--borda); }
-.controle-notificacoes { margin-top: 1rem; padding: 0.8rem 1rem; border: 1px solid var(--borda); border-radius: var(--raio); background: var(--superficie); }
-.controle-notificacoes p { margin: 0 0 0.6rem; }
 .cartao-fav { flex-direction: column; align-items: stretch; }
 .cartao-fav-topo { display: flex; align-items: center; gap: 0.5rem; }
 .cartao-expande { flex: 1; }

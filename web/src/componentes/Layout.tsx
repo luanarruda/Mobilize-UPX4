@@ -1,7 +1,6 @@
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useEffect, useRef } from 'react';
 import { BarraAcessibilidade } from './BarraAcessibilidade';
-import { FaixaAvisos } from './Avisos';
 import { useSessao } from '../contexto/Sessao';
 
 export function Layout() {
@@ -48,7 +47,6 @@ export function Layout() {
         </nav>
         <BarraAcessibilidade />
       </header>
-      <FaixaAvisos />
       <main id="conteudo" tabIndex={-1} ref={principal}>
         <Outlet />
       </main>

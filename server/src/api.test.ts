@@ -5,7 +5,6 @@ import type { AddressInfo } from 'node:net';
 import type { Server } from 'node:http';
 import { criarApp } from './app.js';
 import { CONTA_DEMO } from './db/migracoes.js';
-import { avaliarAtraso } from './services/avisos.js';
 
 let servidor: Server;
 let base: string;
@@ -98,28 +97,5 @@ describe('favoritos (RF06)', () => {
     const imp = await api('POST', '/favoritos/importar', { itens: [{ tipo: 'linha', id: 2 }, { tipo: 'ponto', id: 8 }, { tipo: 'linha', id: 999 }] });
     expect(imp.corpo).toHaveLength(2); // repetido e inexistente ficam de fora
     expect((await api('DELETE', '/favoritos/ponto/8')).corpo).toEqual([{ tipo: 'linha', id: 2 }]);
-  });
-});
-
-describe('avisos (RF05)', () => {
-  it('lista o desvio de exemplo e só publica com a chave de administração', async () => {
-    const api = cliente();
-    const lista = await api('GET', '/avisos');
-    expect(lista.corpo.some((a: { tipo: string; codigo: string }) => a.tipo === 'desvio' && a.codigo === '405')).toBe(true);
-
-    const aviso = { linha: '201', tipo: 'interrupcao', titulo: 'Linha interrompida', mensagem: 'Acidente na via.' };
-    expect((await api('POST', '/avisos', aviso)).status).toBe(403);
-    const ok = await api('POST', '/avisos', aviso, { 'x-chave-admin': 'chave-de-teste' });
-    expect(ok.status).toBe(201);
-    const criado = ok.corpo.find((a: { titulo: string }) => a.titulo === 'Linha interrompida');
-    expect((await api('DELETE', `/avisos/${criado.id}`, undefined, { 'x-chave-admin': 'chave-de-teste' })).status).toBe(204);
-  });
-
-  it('detecta atraso com histerese (entra < 15 km/h, sai só > 18 km/h)', () => {
-    expect(avaliarAtraso(14, false, 600, 900).atrasada).toBe(true);
-    expect(avaliarAtraso(16, false, 600, 900).atrasada).toBe(false); // 16 não basta para entrar
-    expect(avaliarAtraso(16, true, 600, 900).atrasada).toBe(true);   // mas não sai com 16
-    expect(avaliarAtraso(19, true, 600, 900).atrasada).toBe(false);
-    expect(avaliarAtraso(14, false, 600, 700).atrasada).toBe(false); // só 2 min: não avisa
   });
 });

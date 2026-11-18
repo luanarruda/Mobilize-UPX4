@@ -4,8 +4,6 @@ import { Link, useParams } from 'react-router-dom';
 import { api, type PontoDetalhe, type Previsoes } from '../api';
 import { horarioDaqui } from '../util';
 import { BotaoFavorito } from '../componentes/BotaoFavorito';
-import { ListaAvisos } from '../componentes/Avisos';
-import { useTempoReal } from '../contexto/TempoReal';
 
 const ATUALIZAR_MS = 15_000;
 
@@ -24,7 +22,6 @@ export function PaginaPonto() {
   const [ponto, setPonto] = useState<PontoDetalhe | null>(null);
   const [dados, setDados] = useState<Previsoes | null>(null);
   const [erro, setErro] = useState<string | null>(null);
-  const { avisos } = useTempoReal();
 
   const atualizar = useCallback(() => {
     api.previsoes(id).then(setDados).catch(() => setErro('Não foi possível atualizar a previsão.'));
@@ -63,8 +60,6 @@ export function PaginaPonto() {
         {' · '}
         <Link to={`/planejar?destino=${ponto.id}`}>Planejar trajeto até aqui</Link>
       </p>
-
-      <ListaAvisos avisos={avisos.filter((a) => ponto.linhas.some((l) => l.id === a.linhaId))} />
 
       <div className="cabecalho-previsoes">
         <h2>Próximos ônibus</h2>

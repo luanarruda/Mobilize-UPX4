@@ -1,6 +1,6 @@
 // RF06 — Favoritos. Funcionam SEM conta (guardados no navegador). Com conta,
 // ficam no servidor; ao entrar, os favoritos do navegador são levados para a conta.
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { api, type Favorito, type LinhaResumo, type Ponto } from '../api';
 import { useSessao } from './Sessao';
 
@@ -23,8 +23,6 @@ interface ValorFavoritos {
   itens: Favorito[];
   ehFavorito: (f: Favorito) => boolean;
   alternar: (f: Favorito) => Promise<void>;
-  /** Linhas que a pessoa acompanha: favoritas + as que passam nos pontos favoritos (RF05). */
-  linhasSeguidas: Set<number>;
   linhas: LinhaResumo[];
   pontos: Ponto[];
   erro: string | null;
@@ -86,22 +84,10 @@ export function ProvedorFavoritos({ children }: { children: ReactNode }) {
     [itens, usuario],
   );
 
-  const linhasSeguidas = useMemo(() => {
-    const ids = new Set(itens.filter((i) => i.tipo === 'linha').map((i) => i.id));
-    const idPorCodigo = new Map(linhas.map((l) => [l.codigo, l.id]));
-    for (const f of itens.filter((i) => i.tipo === 'ponto')) {
-      for (const codigo of pontos.find((p) => p.id === f.id)?.linhas ?? []) {
-        const id = idPorCodigo.get(codigo);
-        if (id) ids.add(id);
-      }
-    }
-    return ids;
-  }, [itens, linhas, pontos]);
-
   const ehFavorito = useCallback((f: Favorito) => itens.some((i) => igual(i, f)), [itens]);
 
   return (
-    <Contexto.Provider value={{ itens, ehFavorito, alternar, linhasSeguidas, linhas, pontos, erro }}>
+    <Contexto.Provider value={{ itens, ehFavorito, alternar, linhas, pontos, erro }}>
       {children}
     </Contexto.Provider>
   );

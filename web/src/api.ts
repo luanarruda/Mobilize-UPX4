@@ -127,21 +127,6 @@ export interface ResultadoPlano {
   itinerarios: Itinerario[];
 }
 
-export type TipoAviso = 'atraso' | 'desvio' | 'interrupcao';
-
-export interface Aviso {
-  id: string;
-  linhaId: number;
-  codigo: string;
-  cor: string;
-  tipo: TipoAviso;
-  titulo: string;
-  mensagem: string;
-  desde: string;
-  ate: string | null;
-  origem: 'operacao' | 'automatico';
-}
-
 export interface Preferencias {
   fonte?: 'normal' | 'grande' | 'muito-grande';
   altoContraste?: boolean;
@@ -191,8 +176,6 @@ export const api = {
   pontos: () => get<Ponto[]>('/pontos'),
   ponto: (id: number) => get<PontoDetalhe>(`/pontos/${id}`),
   previsoes: (id: number) => get<Previsoes>(`/pontos/${id}/previsoes`),
-  avisos: () => get<Aviso[]>('/avisos'),
-
   eu: () => get<{ usuario: Usuario | null }>('/auth/eu'),
   entrar: (email: string, senha: string) => requisitar<{ usuario: Usuario }>('POST', '/auth/login', { email, senha }),
   cadastrar: (dados: { nome: string; email: string; senha: string; aceite: boolean }) =>

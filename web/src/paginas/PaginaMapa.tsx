@@ -21,7 +21,7 @@ export function PaginaMapa() {
   const [erro, setErro] = useState<string | null>(null);
   const [visiveis, setVisiveis] = useState<Set<number>>(new Set());
   const [selecionada, setSelecionada] = useState<number | null>(null);
-  const { posicoes, status, avisos } = useTempoReal();
+  const { posicoes, status } = useTempoReal();
 
   useEffect(() => {
     (async () => {
@@ -89,7 +89,6 @@ export function PaginaMapa() {
                   <span className="nome">{l.nome}</span>
                   <span className="qtd">
                     {emOperacao} em operação
-                    {avisos.some((a) => a.linhaId === l.id) && <span className="tag-aviso"> · ⚠ com aviso</span>}
                   </span>
                 </button>
               </li>
