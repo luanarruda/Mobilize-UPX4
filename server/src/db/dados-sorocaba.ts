@@ -2,8 +2,8 @@
 //
 // ATENÇÃO: as coordenadas são aproximadas e as linhas NÃO correspondem às
 // linhas oficiais da Urbes. Os trajetos ligam os pontos em linha reta.
-// Servem para a Fase 1 (piloto) até termos dados oficiais; na Etapa 6
-// entra um importador de dados reais (GTFS / SPTrans Olho Vivo).
+// Servem para a demonstração até termos dados oficiais da Urbes ou das
+// operadoras (Fase 1 do plano de aplicação, seção 8 da documentação).
 
 export interface PontoSeed {
   nome: string;

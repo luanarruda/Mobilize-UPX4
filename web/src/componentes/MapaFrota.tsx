@@ -21,7 +21,9 @@ interface Props {
 function Enquadrar({ coords }: { coords: [number, number][] }) {
   const mapa = useMap();
   useEffect(() => {
-    if (coords.length > 1) mapa.fitBounds(coords, { padding: [30, 30] });
+    // Sem animação: se a pessoa sair da página no meio da animação, o Leaflet
+    // tenta mexer num mapa que já não existe (erro "_leaflet_pos").
+    if (coords.length > 1) mapa.fitBounds(coords, { padding: [30, 30], animate: false });
   }, [mapa, coords]);
   return null;
 }

@@ -18,7 +18,7 @@ export function agoraLocal(data = new Date()) {
       .map((p) => [p.type, p.value]),
   );
   const minutosDoDia = Number(partes.hour) * 60 + Number(partes.minute);
-  // TODO (Etapa 6): tratar feriados como domingo, conforme tabela da Urbes.
+  // Limitação conhecida: feriados ainda contam como dia útil (ver README).
   const tipoDia: TipoDia = partes.weekday === 'Sat' ? 'sabado' : partes.weekday === 'Sun' ? 'domingo' : 'util';
   return { tipoDia, minutosDoDia };
 }

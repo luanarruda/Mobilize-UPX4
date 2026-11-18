@@ -8,8 +8,9 @@ const CENTRO_SOROCABA: Coord = [-23.497, -47.458];
 function Enquadrar({ coords }: { coords: Coord[] }) {
   const mapa = useMap();
   useEffect(() => {
-    if (coords.length > 1) mapa.fitBounds(coords, { padding: [40, 40] });
-    else if (coords.length === 1) mapa.setView(coords[0], 15);
+    // Sem animação: evita o erro "_leaflet_pos" ao sair da página no meio dela.
+    if (coords.length > 1) mapa.fitBounds(coords, { padding: [40, 40], animate: false });
+    else if (coords.length === 1) mapa.setView(coords[0], 15, { animate: false });
   }, [mapa, coords]);
   return null;
 }

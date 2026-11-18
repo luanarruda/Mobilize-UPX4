@@ -1,4 +1,6 @@
 import express, { type ErrorRequestHandler } from 'express';
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import cookieParser from 'cookie-parser';
 import { rotasLinhas } from './routes/linhas.js';
 import { rotasPontos } from './routes/pontos.js';
@@ -25,6 +27,20 @@ export function criarApp() {
   app.use('/api/lotacao', rotasLotacao);
   app.use('/api/feedback', rotasFeedback);
   app.get('/api/veiculos', (_req, res) => res.json(estado.todas()));
+
+  // Rotas /api que não existem respondem 404 em JSON (e não com o site).
+  app.use('/api', (_req, res) => res.status(404).json({ erro: 'Rota não encontrada.' }));
+
+  // Depois de `npm run build`, a própria API entrega o site compilado
+  // (web/dist). Assim, na apresentação, um único comando (`npm start`) sobe
+  // tudo, sem o servidor de desenvolvimento do Vite.
+  const pastaSite = fileURLToPath(new URL('../../web/dist', import.meta.url));
+  if (existsSync(pastaSite)) {
+    app.use(express.static(pastaSite));
+    // Qualquer outro endereço (/linhas/2, /favoritos…) devolve o index.html e
+    // o React Router decide a tela — é assim que um "single page app" funciona.
+    app.get('/{*caminho}', (_req, res) => res.sendFile(`${pastaSite}/index.html`));
+  }
 
   // Tratador de erros central: nenhum erro de banco vaza detalhes internos ao usuário.
   const tratarErro: ErrorRequestHandler = (erro, _req, res, _next) => {

@@ -1,6 +1,7 @@
 // Contrato entre "de onde vêm as posições" e o resto do sistema.
-// O simulador e, futuramente, o adaptador da SPTrans implementam a mesma
-// interface — trocar a fonte não muda a API nem o front-end.
+// Hoje só o simulador implementa esta interface. Quando houver dados reais da
+// operação (Fase 1 do plano de aplicação), basta criar outro provedor com a
+// mesma interface — a API e o front-end não mudam.
 
 export interface PosicaoVeiculo {
   veiculoId: number;

@@ -2,6 +2,12 @@
 
 Aplicação web de acompanhamento do transporte público em tempo real. Projeto Interdisciplinar, Facens (ADS), **Grupo Mobilize**, tema *Mobilidade e Urbanização*.
 
+| Documento | Para quê |
+|---|---|
+| Este README | Como rodar, telas, API e o **porquê** de cada escolha técnica |
+| [docs/ARQUITETURA.md](docs/ARQUITETURA.md) | Diagramas (sistema, fluxo em tempo real, banco), onde está cada requisito no código, disciplinas aplicadas, testes e limitações |
+| [docs/APRESENTACAO.md](docs/APRESENTACAO.md) | Roteiro de demonstração pelas personas, checklist do dia, respostas para perguntas da banca e solução de problemas |
+
 ## Como rodar
 
 Pré-requisito: **Node.js 22.13 ou mais novo** (recomendado: a versão LTS mais recente em [nodejs.org](https://nodejs.org)). Não é preciso instalar banco de dados nem Docker.
@@ -19,7 +25,8 @@ Abra **http://localhost:5173**.
 | `npm install` | Lê os `package.json` da raiz, de `server/` e de `web/` (npm *workspaces*) e instala tudo em uma pasta `node_modules` compartilhada. Só é preciso rodar de novo quando alguém adicionar uma dependência. |
 | `npm run dev` | Sobe a API (porta 3333) e o site (porta 5173) juntos com o `concurrently`. Os dois recarregam sozinhos quando um arquivo muda. Na primeira vez, cria o banco `server/dados/rotacerta.db` com os dados de demonstração. |
 | `npm run db:reset` | Apaga o arquivo do banco. No próximo `npm run dev` ele é recriado do zero. Use quando mudar o `schema.sql` ou os dados de demonstração. |
-| `npm test` | Roda os testes automáticos do back-end (Vitest). |
+| `npm test` | Roda os 26 testes automáticos do back-end (Vitest). |
+| `npm run apresentacao` | Compila o site e sobe **tudo num processo só** em http://localhost:3333, sem o Vite. É o modo mais estável para apresentar (ver [guia](docs/APRESENTACAO.md)). |
 
 **Testar no celular:** com o `npm run dev` rodando, o Vite mostra uma linha `Network: http://192.168.x.x:5173`. Com o celular **na mesma rede Wi-Fi**, abra esse endereço no navegador dele. Na primeira vez, o Windows pode perguntar se libera o Node no firewall: permita em "Redes privadas". O botão "usar o ponto mais próximo de mim" não funciona por esse endereço, porque o navegador só libera a localização em `https` ou em `localhost`.
 
@@ -288,4 +295,6 @@ As linhas `100`, `201`, `302`, `405`, `510` e `BRT1` são **fictícias**, montad
 - [x] **Etapa 4:** favoritos (RF06), cadastro e login (RF08)
 - [ ] ~~Notificações (RF05)~~: retirado do escopo pelo grupo. Com dados simulados, os avisos de atraso e desvio seriam inventados. Pode voltar quando houver dados reais da operação.
 - [x] **Etapa 5:** lotação colaborativa (RF09), feedback (RF10), impressão de horários (RF11), revisão de acessibilidade (RF07)
-- [ ] Etapa 6: dados reais (SPTrans Olho Vivo), testes e documentação final
+- [x] **Etapa 6:** guia de apresentação, documentação técnica, modo de execução em processo único e revisão final
+
+As limitações conhecidas estão listadas em [docs/ARQUITETURA.md](docs/ARQUITETURA.md#7-limitações-conhecidas).
