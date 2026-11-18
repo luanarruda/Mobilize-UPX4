@@ -34,7 +34,10 @@ export class Simulador implements ProvedorPosicoes {
   private veiculos: VeiculoSim[] = [];
   private timer?: NodeJS.Timeout;
 
-  constructor(private fatorTempo = 1) {}
+  // Lentidões em andamento: linhaId → até quando (timestamp).
+  private lentidoes = new Map<number, number>();
+
+  constructor(private fatorTempo = 1, private incidentes = true) {}
 
   async iniciar(aoAtualizar: (p: PosicaoVeiculo[]) => void) {
     this.carregar();
@@ -87,10 +90,30 @@ export class Simulador implements ProvedorPosicoes {
     return i === -1 ? 0 : i;
   }
 
+  /** Velocidade considerando lentidão na linha (trânsito): 45% da normal. */
+  private velocidadeEfetiva(v: VeiculoSim, agora: number) {
+    const lenta = (this.lentidoes.get(v.linhaId) ?? 0) > agora;
+    return lenta ? v.velocidadeKmh * 0.45 : v.velocidadeKmh;
+  }
+
+  /**
+   * Em média uma lentidão a cada 8 minutos na rede toda, durando de 4 a 8 min.
+   * Serve para demonstrar os avisos automáticos de atraso (RF05).
+   */
+  private sortearLentidao(agora: number, dt: number) {
+    for (const [id, ate] of this.lentidoes) if (ate <= agora) this.lentidoes.delete(id);
+    if (Math.random() >= dt / 480) return;
+    const livres = [...this.linhas.keys()].filter((id) => !this.lentidoes.has(id));
+    if (livres.length === 0) return;
+    const linha = livres[Math.floor(Math.random() * livres.length)];
+    this.lentidoes.set(linha, agora + (sortear(4, 8) * 60_000) / this.fatorTempo);
+  }
+
   /** Avança a simulação dt segundos e devolve as posições atuais. */
   private passo(dtReal: number): PosicaoVeiculo[] {
     const agora = Date.now();
     const dt = dtReal * this.fatorTempo;
+    if (this.incidentes) this.sortearLentidao(agora, dt);
 
     for (const v of this.veiculos) {
       if (v.paradoAte > agora) continue;
@@ -98,7 +121,7 @@ export class Simulador implements ProvedorPosicoes {
 
       // Varia a velocidade aos poucos (trânsito), limitada entre 12 e 45 km/h.
       v.velocidadeKmh = Math.min(45, Math.max(12, v.velocidadeKmh + sortear(-3, 3)));
-      const andou = (v.velocidadeKmh / 3.6) * dt;
+      const andou = (this.velocidadeEfetiva(v, agora) / 3.6) * dt;
 
       // Distância até a próxima parada, tratando a volta ao início do circuito.
       const alvo = linha.paradas[v.proximaParada];
@@ -128,7 +151,7 @@ export class Simulador implements ProvedorPosicoes {
         lat,
         lng,
         rumo: rumo([lat, lng], adiante),
-        velocidadeKmh: parado ? 0 : Math.round(v.velocidadeKmh),
+        velocidadeKmh: parado ? 0 : Math.round(this.velocidadeEfetiva(v, agora)),
         acessivel: v.acessivel,
         distanciaNoTrajeto: v.distancia,
         atualizadoEm: iso,

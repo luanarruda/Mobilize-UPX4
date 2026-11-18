@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, type LinhaDetalhe, type Ponto, type PosicaoVeiculo } from '../api';
-import { usePosicoes } from '../hooks/usePosicoes';
+import { useTempoReal } from '../contexto/TempoReal';
 import { MapaFrota } from '../componentes/MapaFrota';
 
 /** Próximo ponto do itinerário à frente do ônibus. */
@@ -21,7 +21,7 @@ export function PaginaMapa() {
   const [erro, setErro] = useState<string | null>(null);
   const [visiveis, setVisiveis] = useState<Set<number>>(new Set());
   const [selecionada, setSelecionada] = useState<number | null>(null);
-  const { posicoes, status } = usePosicoes();
+  const { posicoes, status, avisos } = useTempoReal();
 
   useEffect(() => {
     (async () => {
@@ -89,6 +89,7 @@ export function PaginaMapa() {
                   <span className="nome">{l.nome}</span>
                   <span className="qtd">
                     {emOperacao} em operação
+                    {avisos.some((a) => a.linhaId === l.id) && <span className="tag-aviso"> · ⚠ com aviso</span>}
                   </span>
                 </button>
               </li>

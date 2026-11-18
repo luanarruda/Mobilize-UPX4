@@ -5,6 +5,9 @@ import { api, type HorariosLinha, type LinhaDetalhe, type TipoDia } from '../api
 import { usePosicoes } from '../hooks/usePosicoes';
 import { MapaFrota } from '../componentes/MapaFrota';
 import { NOME_TIPO_DIA } from '../util';
+import { BotaoFavorito } from '../componentes/BotaoFavorito';
+import { ListaAvisos } from '../componentes/Avisos';
+import { useTempoReal } from '../contexto/TempoReal';
 
 const minutosAgora = () => {
   const d = new Date();
@@ -19,6 +22,7 @@ export function PaginaLinha() {
   const [tipo, setTipo] = useState<TipoDia>('util');
   const [erro, setErro] = useState<string | null>(null);
   const { posicoes } = usePosicoes();
+  const { avisos } = useTempoReal();
 
   useEffect(() => {
     setLinha(null);
@@ -59,7 +63,9 @@ export function PaginaLinha() {
         <h1 className="titulo-linha">
           <span className="codigo-linha" style={{ background: linha.cor }}>{linha.codigo}</span>
           {linha.nome}
+          <BotaoFavorito tipo="linha" id={linha.id} nome={`linha ${linha.codigo}`} />
         </h1>
+        <ListaAvisos avisos={avisos.filter((a) => a.linhaId === linha.id)} mostrarLinha={false} />
         <p className="cartao-sub">
           {linha.empresa} · {veiculos.length} ônibus em operação agora
           {' · '}

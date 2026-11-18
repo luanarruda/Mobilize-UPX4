@@ -32,18 +32,18 @@ rotacerta/
 ├── server/                 API Node.js + TypeScript
 │   ├── dados/              arquivo do banco SQLite (gerado, fora do Git)
 │   └── src/
-│       ├── db/             schema.sql, dados de demonstração, conexão
+│       ├── db/             schema.sql, migrações, dados de demonstração, conexão
 │       ├── realtime/       simulador, estado da frota, WebSocket
 │       ├── routes/         rotas REST (/api/linhas, /api/pontos…)
-│       ├── services/       catálogo da rede, previsão de chegada, planejador, fuso horário
+│       ├── services/       catálogo, previsão, planejador, contas, avisos, fuso horário
 │       ├── geo.ts          cálculos geográficos (Haversine, interpolação)
 │       └── index.ts        ponto de entrada
 └── web/                    Site React + TypeScript (Vite)
     └── src/
         ├── componentes/    Layout, mapa, barra de acessibilidade
-        ├── contexto/       preferências de acessibilidade
-        ├── hooks/          usePosicoes (WebSocket)
-        └── paginas/        Mapa, Planejar, Linhas, Linha, Ponto
+        ├── contexto/       sessão, favoritos, tempo real (WebSocket), acessibilidade
+        ├── hooks/          usePosicoes
+        └── paginas/        Mapa, Planejar, Linhas, Linha, Ponto, Favoritos, Entrar, Conta
 ```
 
 ## Telas
@@ -55,6 +55,43 @@ rotacerta/
 | `/linhas/:id` | Itinerário nos dois sentidos, próximas saídas, quadro de horários e mapa da linha (RF03) |
 | `/pontos/:id` | Previsão de chegada de todas as linhas que passam no ponto (RF02) |
 | `/planejar` | Planejador de trajetos com baldeação e opção acessível (RF04) |
+| `/favoritos` | Pontos favoritos com a próxima chegada, linhas favoritas, avisos e ativação de notificações (RF05, RF06) |
+| `/entrar`, `/cadastro` | Login e criação de conta opcional (RF08) |
+| `/conta` | Dados da conta, baixar meus dados, excluir conta (RF08 + LGPD) |
+| `/privacidade` | Política de privacidade |
+
+### Conta de demonstração
+
+Existe em qualquer computador, porque é criada junto com o banco:
+
+- **E-mail:** `demo@rotacerta.com.br`
+- **Senha:** `rotacerta2026`
+
+Ela já vem com a linha 201 e o ponto Facens nos favoritos. Contas criadas pelo site ficam guardadas **só no computador onde foram criadas**, no arquivo `server/dados/rotacerta.db`.
+
+### Publicar um aviso na apresentação (RF05)
+
+Com o sistema rodando, num **segundo terminal** (Git Bash):
+
+```bash
+curl -X POST http://localhost:3333/api/avisos \
+  -H "content-type: application/json" \
+  -H "x-chave-admin: demo" \
+  -d '{"linha":"201","tipo":"interrupcao","titulo":"Linha 201 interrompida","mensagem":"Acidente na via. Use a linha 510 até a Facens.","horas":1}'
+```
+
+- **`curl -X POST <url>`**: faz uma requisição HTTP do tipo POST, que é o que um sistema da operadora faria para publicar o aviso.
+- **`-H "content-type: application/json"`**: avisa que o corpo vai em JSON.
+- **`-H "x-chave-admin: demo"`**: a chave de administração. Sem ela, a API responde 403 (proibido).
+- **`-d '{...}'`**: os dados do aviso. `tipo` pode ser `atraso`, `desvio` ou `interrupcao`. `horas` é por quanto tempo ele vale; sem esse campo, vale até ser encerrado.
+
+O aviso aparece **na hora**, sem recarregar, em todas as telas abertas. Para encerrá-lo, use o `id` que a resposta mostra (ex.: `op-2`):
+
+```bash
+curl -X DELETE http://localhost:3333/api/avisos/op-2 -H "x-chave-admin: demo"
+```
+
+Além disso, o simulador cria **lentidões aleatórias** (em média uma a cada 8 minutos, durando de 4 a 8 minutos), e o sistema detecta sozinho o atraso. Para a apresentação, `SIMULADOR_VELOCIDADE=5` no `server/.env` faz isso acontecer 5× mais rápido.
 
 ## API
 
@@ -70,7 +107,19 @@ rotacerta/
 | GET | `/api/pontos/:id/previsoes` | Próximas chegadas por linha e sentido |
 | GET | `/api/planejar?origem=&destino=&acessivel=` | Até 3 opções de trajeto, com cada trecho detalhado |
 | GET | `/api/veiculos` | Posições atuais de todos os ônibus |
-| WS | `/ws` | Mensagens `{ tipo: "posicoes", dados: [...] }` a cada 2 s |
+| POST | `/api/auth/cadastro` | Cria conta `{ nome, email, senha, aceite }` e já entra |
+| POST | `/api/auth/login` | Entra `{ email, senha }`; devolve o cookie de sessão |
+| POST | `/api/auth/logout` | Sai e invalida a sessão |
+| GET | `/api/auth/eu` | Usuário logado (ou `null`) |
+| PUT | `/api/auth/preferencias` | Salva fonte e contraste na conta |
+| GET | `/api/auth/meus-dados` | Baixa os dados da conta em JSON (LGPD) |
+| DELETE | `/api/auth/conta` | Exclui a conta e os dados (LGPD) |
+| GET | `/api/favoritos` | Favoritos da conta (exige login) |
+| PUT/DELETE | `/api/favoritos/:tipo/:id` | Adiciona/remove favorito (`tipo` = `linha` ou `ponto`) |
+| POST | `/api/favoritos/importar` | Junta os favoritos do navegador aos da conta |
+| GET | `/api/avisos` | Avisos ativos |
+| POST/DELETE | `/api/avisos[/:id]` | Publica/encerra aviso (cabeçalho `x-chave-admin`) |
+| WS | `/ws` | `{ tipo: "posicoes", dados }` a cada 2 s e `{ tipo: "avisos", dados }` quando os avisos mudam |
 
 ## Por que cada escolha técnica
 
@@ -153,6 +202,49 @@ Os parâmetros ficam juntos em `services/previsao.ts` (`PARAMETROS`), para o gru
 
 **Limitações conhecidas.** O planejamento parte de pontos de parada, e não de endereços: para buscar por endereço seria preciso um serviço de geocodificação. Linhas sem ônibus em operação no momento não entram no cálculo.
 
+### Contas, favoritos e avisos (Etapa 4)
+
+**Migrações do banco.** A Etapa 4 cria tabelas novas (`usuarios`, `sessoes`, `favoritos`, `avisos`), mas quem já tem o `rotacerta.db` não pode perder os dados nem precisar apagá-lo. O SQLite tem um contador interno, `PRAGMA user_version`, onde gravamos até qual versão o banco já foi atualizado. Ao iniciar, `db/migracoes.ts` aplica só as migrações que faltam, cada uma dentro de uma transação. É o mesmo princípio de ferramentas como Flyway e Prisma Migrate.
+
+**Senhas com bcrypt (RF08).** Nunca guardamos a senha, só o *hash*: o resultado de uma conta de mão única, em que dá para conferir se uma senha bate, mas não dá para voltar do hash à senha. Usamos bcrypt, e não SHA-256, por dois motivos:
+- **Salt:** o bcrypt sorteia 16 bytes aleatórios para cada senha e os mistura antes de calcular. Duas pessoas com a senha "123456" ficam com hashes diferentes, e um atacante não consegue usar tabelas prontas de hashes (*rainbow tables*).
+- **Custo:** o bcrypt é **lento de propósito**. Com custo 10 ele repete o cálculo 2¹⁰ = 1.024 vezes, cerca de 70 ms. Para quem faz login isso é imperceptível; para quem roubou o banco e quer testar bilhões de senhas, vira anos. O SHA-256 é feito para ser rápido: ótimo para conferir arquivos, péssimo para senhas.
+- O resultado fica assim: `$2b$10$<salt de 22 caracteres><hash de 31>`. O custo e o salt vão junto no texto, e por isso o `bcrypt.compare` não precisa de mais nada.
+- Usamos a biblioteca **bcryptjs**, escrita em JavaScript puro, e não a `bcrypt`, que precisa compilar código C. No Windows, a compilação costuma falhar.
+
+**Sessão em cookie httpOnly, e não JWT.** Ao entrar, o servidor sorteia um token de 32 bytes, impossível de adivinhar, e o envia num cookie:
+- **`httpOnly`:** o JavaScript da página não consegue ler o cookie. Se um script malicioso for injetado no site (XSS), ele não rouba a sessão.
+- **`SameSite=Lax`:** o navegador não envia o cookie em formulários vindos de outros sites, o que protege contra CSRF.
+- **No banco fica só o SHA-256 do token.** Quem copiar o arquivo do banco não consegue usar as sessões. Aqui o SHA-256 é adequado, porque o token já é aleatório e longo e não há o que "adivinhar".
+- **Por que não JWT:** uma sessão guardada no banco pode ser cancelada na hora, ao sair ou ao excluir a conta. Um JWT continua válido até expirar, mesmo depois do "sair".
+
+**Proteções no login:**
+- **Mesma mensagem** para e-mail inexistente e senha errada ("E-mail ou senha incorretos"), para não revelar quais e-mails têm conta.
+- **Mesmo tempo de resposta** nos dois casos: quando o e-mail não existe, conferimos a senha contra um hash falso. Sem isso, a resposta mais rápida entregaria que o e-mail não existe (*timing attack*).
+- **Limite de tentativas:** após 5 erros para o mesmo e-mail a partir do mesmo IP, o login fica bloqueado por 15 minutos, o que dificulta adivinhar senhas por tentativa e erro.
+- **Senha:** de 8 a 72 caracteres. O bcrypt só considera os primeiros 72 bytes.
+
+**LGPD.** O cadastro exige aceitar a política de privacidade, e guardamos a data do aceite como registro do consentimento. Em "Minha conta", a pessoa **baixa seus dados** em JSON (direito de acesso e portabilidade) e **exclui a conta** (direito de eliminação). O `ON DELETE CASCADE` apaga junto as sessões e os favoritos. A localização usada em "ponto mais próximo" nunca sai do navegador.
+
+**Favoritos sem conta (RF06).** A documentação diz que a conta é **opcional**, então os favoritos funcionam sem login, guardados no `localStorage` do navegador. Ao entrar, os favoritos do navegador são **enviados e juntados** aos da conta (`/api/favoritos/importar`, que ignora repetidos com `INSERT OR IGNORE`) e o navegador é limpo. Ao clicar na estrela, ela muda **na hora** (atualização otimista) e, se o servidor recusar, volta ao estado anterior.
+
+**Preferências na conta (RF08 + RF07).** A fonte e o contraste vão para a conta. Ao entrar em outro computador, já vêm aplicados. Exemplo da persona Helena: a filha configura uma vez, e ela encontra tudo pronto.
+
+**Avisos (RF05).** Eles vêm de duas origens:
+- **Operação:** desvios e interrupções publicados pela empresa ou pelo órgão gestor via API, protegida por chave. A chave é comparada com `timingSafeEqual`, em tempo constante, para o tempo de resposta não revelar quantos caracteres estão certos.
+- **Automático:** a cada 15 s, o sistema compara a velocidade atual de cada linha com a normal e calcula quantos minutos a mais uma viagem típica está levando.
+
+Como o sistema decide e entrega os avisos:
+- **Histerese:** a linha entra em atraso abaixo de 15 km/h, mas só sai acima de 18 km/h. Com um limite único, uma linha oscilando entre 14 e 16 km/h ligaria e desligaria o aviso a cada atualização, e a pessoa receberia uma notificação a cada 30 segundos. Atrasos menores que 3 minutos não geram aviso.
+- **Entrega em tempo real:** quando a lista muda, o servidor envia os avisos pelo WebSocket, e eles aparecem sem recarregar a página.
+- **"Linhas escolhidas":** são as linhas favoritas mais as que passam nos pontos favoritos. Os avisos delas aparecem numa faixa no topo de qualquer página.
+- **Notificação do navegador:** só depois de a pessoa clicar em "Receber avisos no navegador". Pedir a permissão ao abrir o site é má prática, e os navegadores penalizam. Cada aviso notifica uma única vez, e só quando o RotaCerta está em outra aba; com o site na frente, a faixa já mostra o aviso. Funciona em `https` e em `localhost`.
+- **Acessibilidade:** cada tipo de aviso tem **cor e rótulo em texto** ("INTERRUPÇÃO"), então a informação não depende só da cor, o que ajuda daltônicos. A faixa usa `aria-live`, e o leitor de tela anuncia o aviso novo.
+
+**Uma conexão WebSocket só.** Antes, cada página abria a sua conexão, e ela caía e reabria a cada troca de página. Agora existe um `ProvedorTempoReal` no topo da aplicação, com uma conexão única que leva as posições e os avisos.
+
+**Sem CORS.** O site e a API ficam na mesma origem (o Vite faz o proxy em desenvolvimento), então o pacote `cors`, que liberava qualquer site, foi removido. Isso fecha uma porta para ataques que usam o cookie de sessão a partir de outro domínio.
+
 ### Layout responsivo
 
 A documentação define que **nesta fase não haverá versão para celular**, ou seja, nenhum aplicativo nem recursos próprios de celular. Mesmo assim, o site se adapta a qualquer largura de tela, por três motivos:
@@ -180,6 +272,6 @@ As linhas `100`, `201`, `302`, `405`, `510` e `BRT1` são **fictícias**, montad
 - [x] **Etapa 1:** fundação, mapa em tempo real (RF01), base de acessibilidade (RF07)
 - [x] **Etapa 2:** previsão de chegada (RF02), consulta de linhas e horários (RF03)
 - [x] **Etapa 3:** planejador de trajetos com baldeação (RF04)
-- [ ] Etapa 4: notificações (RF05), favoritos (RF06), cadastro e login (RF08)
+- [x] **Etapa 4:** notificações (RF05), favoritos (RF06), cadastro e login (RF08)
 - [ ] Etapa 5: lotação colaborativa (RF09), feedback (RF10), impressão de horários (RF11)
 - [ ] Etapa 6: dados reais (SPTrans Olho Vivo), testes e documentação final

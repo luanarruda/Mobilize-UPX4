@@ -127,11 +127,62 @@ export interface ResultadoPlano {
   itinerarios: Itinerario[];
 }
 
-async function get<T>(caminho: string): Promise<T> {
-  const resp = await fetch(`/api${caminho}`);
-  if (!resp.ok) throw new Error(`Falha ao carregar ${caminho} (${resp.status})`);
-  return resp.json() as Promise<T>;
+export type TipoAviso = 'atraso' | 'desvio' | 'interrupcao';
+
+export interface Aviso {
+  id: string;
+  linhaId: number;
+  codigo: string;
+  cor: string;
+  tipo: TipoAviso;
+  titulo: string;
+  mensagem: string;
+  desde: string;
+  ate: string | null;
+  origem: 'operacao' | 'automatico';
 }
+
+export interface Preferencias {
+  fonte?: 'normal' | 'grande' | 'muito-grande';
+  altoContraste?: boolean;
+}
+
+export interface Usuario {
+  id: number;
+  nome: string;
+  email: string;
+  preferencias: Preferencias;
+  criadoEm: string;
+}
+
+export type TipoFavorito = 'linha' | 'ponto';
+export interface Favorito {
+  tipo: TipoFavorito;
+  id: number;
+}
+
+/** Erro com a mensagem amigável que a API devolveu em { erro: "..." }. */
+export class ErroApi extends Error {
+  constructor(public status: number, mensagem: string) {
+    super(mensagem);
+  }
+}
+
+async function requisitar<T>(metodo: string, caminho: string, corpo?: unknown): Promise<T> {
+  const resp = await fetch(`/api${caminho}`, {
+    method: metodo,
+    headers: corpo ? { 'content-type': 'application/json' } : undefined,
+    body: corpo ? JSON.stringify(corpo) : undefined,
+    credentials: 'same-origin', // envia o cookie de sessão
+  });
+  if (!resp.ok) {
+    const dados = await resp.json().catch(() => null);
+    throw new ErroApi(resp.status, dados?.erro ?? `Falha na comunicação com o servidor (${resp.status}).`);
+  }
+  return (resp.status === 204 ? null : await resp.json()) as T;
+}
+
+const get = <T,>(caminho: string) => requisitar<T>('GET', caminho);
 
 export const api = {
   linhas: () => get<LinhaResumo[]>('/linhas'),
@@ -140,6 +191,21 @@ export const api = {
   pontos: () => get<Ponto[]>('/pontos'),
   ponto: (id: number) => get<PontoDetalhe>(`/pontos/${id}`),
   previsoes: (id: number) => get<Previsoes>(`/pontos/${id}/previsoes`),
+  avisos: () => get<Aviso[]>('/avisos'),
+
+  eu: () => get<{ usuario: Usuario | null }>('/auth/eu'),
+  entrar: (email: string, senha: string) => requisitar<{ usuario: Usuario }>('POST', '/auth/login', { email, senha }),
+  cadastrar: (dados: { nome: string; email: string; senha: string; aceite: boolean }) =>
+    requisitar<{ usuario: Usuario }>('POST', '/auth/cadastro', dados),
+  sair: () => requisitar<null>('POST', '/auth/logout'),
+  excluirConta: () => requisitar<null>('DELETE', '/auth/conta'),
+  salvarPreferencias: (p: Preferencias) => requisitar<{ preferencias: Preferencias }>('PUT', '/auth/preferencias', p),
+
+  favoritos: () => get<Favorito[]>('/favoritos'),
+  favoritar: (f: Favorito) => requisitar<Favorito[]>('PUT', `/favoritos/${f.tipo}/${f.id}`),
+  desfavoritar: (f: Favorito) => requisitar<Favorito[]>('DELETE', `/favoritos/${f.tipo}/${f.id}`),
+  importarFavoritos: (itens: Favorito[]) => requisitar<Favorito[]>('POST', '/favoritos/importar', { itens }),
+
   planejar: (origem: number, destino: number, acessivel: boolean) =>
     get<ResultadoPlano>(`/planejar?origem=${origem}&destino=${destino}&acessivel=${acessivel ? 1 : 0}`),
 };

@@ -8,10 +8,13 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { config } from '../config.js';
 import { popularBanco } from './popular.js';
+import { migrar } from './migracoes.js';
 
 const pastaServer = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
-export function abrirBanco(arquivo = resolve(pastaServer, config.DB_ARQUIVO)) {
+export function abrirBanco(
+  arquivo = config.DB_ARQUIVO === ':memory:' ? ':memory:' : resolve(pastaServer, config.DB_ARQUIVO),
+) {
   const novo = arquivo === ':memory:' || !existsSync(arquivo);
   if (arquivo !== ':memory:') mkdirSync(dirname(arquivo), { recursive: true });
 
@@ -24,8 +27,9 @@ export function abrirBanco(arquivo = resolve(pastaServer, config.DB_ARQUIVO)) {
 
   if (novo) {
     popularBanco(banco);
-    console.log(`Banco criado em ${arquivo}`);
+    if (arquivo !== ':memory:') console.log(`Banco criado em ${arquivo}`);
   }
+  migrar(banco, novo);
   return banco;
 }
 
