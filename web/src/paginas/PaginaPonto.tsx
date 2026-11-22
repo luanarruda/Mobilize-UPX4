@@ -93,7 +93,7 @@ export function PaginaPonto() {
                     <TextoChegada minutos={c.minutos} />
                     <span className="detalhe-chegada">
                       Ônibus {c.prefixo}
-                      {c.acessivel ? ' · ♿ acessível' : ' · sem elevador'}
+                      {c.acessivel ? ' · ♿ acessível' : ' · sem rampa para cadeira de rodas'}
                     </span>
                     <SeloLotacao lotacao={c.lotacao} />
                     <InformarLotacao veiculoId={c.veiculoId} prefixo={c.prefixo} aoInformar={atualizar} />

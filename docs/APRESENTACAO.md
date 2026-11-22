@@ -87,7 +87,7 @@ Na tela de login, o botão **"Preencher"** coloca os dados da conta demo.
 1. **Fonte e contraste (RF07).** Clique em **A++** e depois em **Alto contraste**. Navegue por duas telas para mostrar que tudo se adapta.
    - *"As preferências ficam salvas na conta. A filha da Helena configura uma vez, e ela encontra tudo pronto em qualquer computador."*
 2. **Trajeto acessível.** Vá em "Planejar trajeto", **Itavuvu → Shopping Iguatemi**, e marque **"Preciso de acessibilidade"**.
-   - *"O planejador só usa ônibus com elevador, só faz baldeação em pontos acessíveis e não sugere trechos a pé."*
+   - *"O planejador só usa ônibus com rampa para cadeira de rodas, só faz baldeação em pontos acessíveis e não sugere trechos a pé."*
    - Mostre o ♿ nos ônibus e nos pontos.
 3. **Navegação por teclado.** Recarregue a página e aperte **Tab**: aparece "Pular para o conteúdo". Navegue alguns campos só com o teclado.
    - *"Todas as telas passaram pelo axe-core, a mesma ferramenta do Lighthouse do Chrome, com zero violações das regras WCAG 2.1 nível AA."*

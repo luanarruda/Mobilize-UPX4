@@ -24,7 +24,7 @@ function Passo({ t, base }: { t: Trecho; base: string }) {
         </p>
         <p className="passo-sub">
           Ônibus {t.prefixo}
-          {t.acessivel ? ' (♿ acessível)' : ' (sem elevador)'} passa {t.esperaS < 60 ? 'agora' : `em ${duracao(t.esperaS)}`},
+          {t.acessivel ? ' (♿ acessível)' : ' (sem rampa)'} passa {t.esperaS < 60 ? 'agora' : `em ${duracao(t.esperaS)}`},
           às {relogio(base, t.partidaS)}.
         </p>
         <p>
@@ -175,7 +175,7 @@ export function PaginaPlanejar() {
             <input id={ids.acessivel} type="checkbox" checked={acessivel} onChange={(e) => setAcessivel(e.target.checked)} />
             <span>
               Preciso de acessibilidade
-              <span className="passo-sub">Só ônibus com elevador, baldeação em pontos acessíveis e sem trechos a pé.</span>
+              <span className="passo-sub">Só ônibus com rampa para cadeira de rodas, baldeação em pontos acessíveis e sem trechos a pé.</span>
             </span>
           </label>
 

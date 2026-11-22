@@ -219,7 +219,7 @@ Os parâmetros ficam juntos em `services/previsao.ts` (`PARAMETROS`), para o gru
 
 **Várias opções.** O estado da busca é (ponto, quantos ônibus já usou, se chegou caminhando), e guardamos o melhor resultado com 1, 2 e 3 ônibus. Uma opção com mais baldeações só aparece se chegar **pelo menos 5 minutos antes** das opções mais simples; caso contrário, é descartada como "dominada".
 
-**Modo acessível (RF04 + RF07).** Com "Preciso de acessibilidade" marcado, o planejador só usa ônibus com elevador, só faz baldeação em pontos acessíveis e não sugere trechos a pé.
+**Modo acessível (RF04 + RF07).** Com "Preciso de acessibilidade" marcado, o planejador só usa ônibus com rampa para cadeira de rodas, só faz baldeação em pontos acessíveis e não sugere trechos a pé.
 
 **O trajeto na URL.** Origem, destino e opção acessível ficam no endereço (`/planejar?origem=15&destino=8`). Dá para mandar o link para alguém, salvar nos favoritos do navegador e usar o botão "voltar". A página do ponto usa isso nos links "Planejar trajeto saindo daqui" e "até aqui".
 
